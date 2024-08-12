@@ -3,9 +3,10 @@
 #include <string>
 #include <unordered_map>
 #include <optional>
-#include <cassert>
+#include <iostream>
 
 constexpr char charTokens[] = {'\0', '(', ')', '{', '}', ':'};
+
 
 enum class TokenKind: char{
   Ident,
@@ -20,9 +21,15 @@ enum class TokenKind: char{
   Unk    = -128
 };
 
+const std::unordered_map<std::string, TokenKind> keywords = {
+  {"void", TokenKind::Void},
+  {"func", TokenKind::Func}
+};
+
 struct SourceFile{
   std::string_view path;
   std::string buffer;
+  SourceFile(const std::string_view path, const std::string buffer): path(path), buffer(buffer) {};
 };
 
 struct Token{
@@ -30,15 +37,30 @@ struct Token{
   int col;
   TokenKind kind;
   std::optional<std::string> value = std::nullopt;
+  std::string to_string(){
+    switch (kind)
+    {
+    case TokenKind::Func:
+      return "Func";
+    case TokenKind::Void:
+      return "Void";
+    case TokenKind::Ident:
+      return "Ident";
+    default:
+      return "single";
+    }
+  }
 };
 
 class Lexer{
+  public:
   const SourceFile *source;
   std::size_t idx = 0; 
   int line = 1;
   int col = 0;
-  public:
-    Lexer(const SourceFile &source) : source(&source) { } 
+    explicit Lexer(const std::string_view &path, const std::string &buffer) {
+      this->source = new SourceFile(path, buffer);
+    };
 
     Token getNextToken();
 
@@ -58,17 +80,14 @@ class Lexer{
   bool isSpace(char c) { return c==' ' || c=='\f' || c=='\n' || c=='\r' || c=='\v'; }
 
   bool isAlpha(char c) {
-    return ( ('a' <= c && c <= 'z') || ('A' <= c <= 'Z') );
+    return ( ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') );
   }
 
   bool isNum(char c) { return '0' <= c && c <= '9'; }
   bool isAlNum(char c) { return isAlpha(c) || isNum(c); }
 };
 
-const std::unordered_map<std::string, TokenKind> keywords = {
-  {"void", TokenKind::Void},
-  {"func", TokenKind::Func}
-};
+
 
 
 #endif

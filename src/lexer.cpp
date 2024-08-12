@@ -2,16 +2,18 @@
 
 Token Lexer::getNextToken(){
   char curr = consume();
-
   while(isSpace(curr)) curr = consume();
 
   if(isAlpha(curr)){
     std::string value{curr};
-    while(isAlNum(curr))
-      value+=consume();
+    while(isAlNum(peekNextChar())){
+      curr = consume();
+      value += curr;
+    }
+    if(keywords.count(value)) 
+      return Token{line, col, keywords.at(value), std::move(value)};
 
-    if(keywords.count(value)) return Token{line, col, keywords.at(value), std::move(value)};
-    return Token{line, col, keywords.at(value), std::move(value)};
+    return Token{line, col, TokenKind::Ident, std::move(value)};
   }
 
   for(auto &c: charTokens) 
@@ -22,5 +24,6 @@ Token Lexer::getNextToken(){
     return getNextToken();
   }
 
+  return Token{line, col, TokenKind::Unk};
 
 }
