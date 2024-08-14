@@ -46,8 +46,18 @@ struct Token{
       return "Void";
     case TokenKind::Ident:
       return "Ident";
+    case TokenKind::Lbrace:
+      return "Lbrace";
+    case TokenKind::Rbrace:
+      return "Rbrace";
+    case TokenKind::Rpar:
+      return "Rpar";
+    case TokenKind::Lpar:
+      return "Lpar";
+    case TokenKind::Colon:
+      return "Colon";
     default:
-      return "single";
+      return "Unk";
     }
   }
 };
@@ -77,7 +87,7 @@ class Lexer{
       return source->buffer[idx++];
   }
 
-  bool isSpace(char c) { return c==' ' || c=='\f' || c=='\n' || c=='\r' || c=='\v'; }
+  bool isSpace(char c) { return c==' ' || c=='\f' || c=='\n' || c=='\r' || c=='\v' || c=='\t'; }
 
   bool isAlpha(char c) {
     return ( ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') );
