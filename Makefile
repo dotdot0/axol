@@ -1,4 +1,4 @@
-CC:=g++
+CC:=clang++
 SRC_DIR:=src
 C:=axol
 TEST_DIR:=test
