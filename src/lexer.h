@@ -5,11 +5,11 @@
 #include <optional>
 #include <iostream>
 
-constexpr char charTokens[] = {'\0', '(', ')', '{', '}', ':'};
+constexpr char charTokens[] = {'\0', '(', ')', '{', '}', ':', ';'};
 
 
 enum class TokenKind: char{
-  Ident,
+  Ident  = 1,
   Func,
   Void,
   Eof    = charTokens[0],
@@ -18,6 +18,7 @@ enum class TokenKind: char{
   Lbrace = charTokens[3],
   Rbrace = charTokens[4],
   Colon  = charTokens[5],
+  SemiColon = charTokens[6],
   Unk    = -128
 };
 
@@ -56,6 +57,10 @@ struct Token{
       return "Lpar";
     case TokenKind::Colon:
       return "Colon";
+    case TokenKind::SemiColon:
+      return "SemiColon";
+    case TokenKind::Eof:
+      return "Eof";
     default:
       return "Unk";
     }
