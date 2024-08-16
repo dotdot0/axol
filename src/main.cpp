@@ -1,6 +1,6 @@
 #include <iostream>
 #include <fstream>
-#include "lexer.h"
+#include "parser.h"
 
 int main(int argc, char *argv[]){
   std::ifstream inp;
@@ -10,6 +10,12 @@ int main(int argc, char *argv[]){
   std::string line;
   while(std::getline(inp, buf)) line += buf+"\n";
   Lexer lex(argv[1], line);
-  while(lex.idx < line.length())
-    std::cout << lex.getNextToken().to_string() << std::endl; 
+  while(lex.idx < line.length()){
+    std::cout << lex.getNextToken().to_string() << std::endl;
+  }
+  // Parser parser(lex);
+  // auto functions = parser.parseSourceFile();
+  // for(auto &fn: functions.first){
+  //   fn->dump();
+  // }
 }
