@@ -16,7 +16,7 @@ std::string ident_(std::size_t level) {
 }
 
 void FunctionDecl::dump(std::size_t level) const {
-  std::cerr << ident_(level) << "FunctionDecl: " <<   ident << ":" << '\n';
+  std::cerr << ident_(level) << "FunctionDecl: " << ident << ":" << type.name << '\n';
   body->dump(level+1);
 }
 
@@ -73,6 +73,7 @@ std::unique_ptr<FunctionDecl> Parser::parseFunctionDecl(){
   eatNextToken();
   matchOrReturn(TokenKind::Ident, "expected ident");
   std::string functionIdent = *nextToken.value;
+  eatNextToken();
   matchOrReturn(TokenKind::Lpar, "(");
   eatNextToken();
 
@@ -95,7 +96,7 @@ Parser::parseSourceFile(){
   bool hasMainFunction = false;
   std::vector<std::unique_ptr<FunctionDecl>> functions;
   while(nextToken.kind!=TokenKind::Eof){
-    if(nextToken.kind != TokenKind::Eof){
+    if(nextToken.kind != TokenKind::Func){
       report(nextToken.line, nextToken.col, "only function decl are allowed on the top level"); 
       synchronizeOn(TokenKind::Func);
       continue;
