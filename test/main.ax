@@ -1,7 +1,7 @@
 func main() : void {
 }
 
-func name() : void{}
+func () : void{}
 
 func add() : void {
   

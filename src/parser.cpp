@@ -29,7 +29,7 @@ void Parser::eatNextToken(){
 }
 
 std::nullptr_t report(int line, int col, std::string_view message, bool isWarning = false){
-  std::cerr << line << ":" << col << ':' << (isWarning ? "warning: " : "error :")
+  std::cerr << line << ":" << col << ": " << (isWarning ? "warning: " : "error: ")
   << message << "\n";
   return nullptr;
 }
@@ -74,13 +74,13 @@ std::unique_ptr<FunctionDecl> Parser::parseFunctionDecl(){
   matchOrReturn(TokenKind::Ident, "expected ident");
   std::string functionIdent = *nextToken.value;
   eatNextToken();
-  matchOrReturn(TokenKind::Lpar, "(");
+  matchOrReturn(TokenKind::Lpar, "expected '('");
   eatNextToken();
 
-  matchOrReturn(TokenKind::Rpar, ")");
+  matchOrReturn(TokenKind::Rpar, "expected ')'");
   eatNextToken();
 
-  matchOrReturn(TokenKind::Colon, ":");
+  matchOrReturn(TokenKind::Colon, "expected ':'");
   eatNextToken();
 
   varOrReturn(type, parseType());
