@@ -1,7 +1,7 @@
 #include "parser.h"
 
-#define matchOrReturn(tok, msg)                                                \
-  if (nextToken.kind != tok)                                                   \
+#define matchOrReturn(tok, msg) \                                               
+  if (nextToken.kind != tok) \                                                
     return report(nextToken.line, nextToken.col, msg);
 
 
@@ -17,6 +17,11 @@ std::string ident_(std::size_t level) {
 
 void FunctionDecl::dump(std::size_t level) const {
   std::cerr << ident_(level) << "FunctionDecl: " << ident << ":" << type.name << '\n';
+  std::cerr << ident_(level+1) << "Params:" << "\n";
+
+  for(auto &&param: params)
+    param->dump(level+2);
+
   body->dump(level+1);
 }
 
@@ -39,6 +44,21 @@ void NumberLiteral::dump(std::size_t level) const {
 
 void DeclRefExpr::dump(std::size_t level) const {
   std::cerr << ident_(level) << "DeclRefExpr: " << identifier << "\n";
+}
+
+void CallExpr::dump(std::size_t level) const {
+  std::cerr << ident_(level) << "CallExpr:\n";
+
+  callee->dump(level+1);
+
+  std::cerr << ident_(level+1) << "ArgumentList:" << "\n";
+  for(auto &&arg: arguments)
+    arg->dump(level+2);
+}
+
+void ParamDecl::dump(std::size_t level) const {
+  std::cerr << ident_(level) << "ParamDecl: " << "\n";
+  std::cerr << ident_(level+1) << ident << ": " << type.name << "\n";
 }
 
 void Parser::eatNextToken(){
@@ -76,8 +96,67 @@ std::unique_ptr<Expr> Parser::parsePrimary(){
   return report(nextToken.line, nextToken.col, "expected expr");
 }
 
+std::unique_ptr<std::vector<std::unique_ptr<Expr>>> 
+Parser::parseArgumentList(){
+  matchOrReturn(TokenKind::Lpar, "expected '('");
+  eatNextToken();
+
+  std::vector<std::unique_ptr<Expr>> argumentList;
+
+  while(true){
+    if(nextToken.kind == TokenKind::Rpar)
+      break;
+
+    varOrReturn(expr, parseExpr());
+    argumentList.emplace_back(std::move(expr));
+
+    if(nextToken.kind != TokenKind::Comma)
+      break;
+    
+    eatNextToken();
+  }
+
+  matchOrReturn(TokenKind::Rpar, "expected ')'");
+  eatNextToken();
+
+  return std::make_unique<std::vector<std::unique_ptr<Expr>>>(std::move(argumentList));
+}
+
+std::unique_ptr<Expr> Parser::parsePostfixExpr(){
+  varOrReturn(expr, parsePrimary());
+
+  if (nextToken.kind != TokenKind::Lpar)
+    return expr;
+
+  int line = nextToken.line;
+  int col  = nextToken.col;
+  varOrReturn(argumentList, parseArgumentList());
+
+  return std::make_unique<CallExpr>(line, col, std::move(expr), std::move(*argumentList));
+}
+
+std::unique_ptr<ParamDecl> Parser::parseParamDecl(){
+  int line = nextToken.line;
+  int col  = nextToken.col;
+
+  std::string ident = *nextToken.value;
+  eatNextToken();
+
+  matchOrReturn(TokenKind::Colon, "expected ':'");
+  eatNextToken();
+
+  varOrReturn(type, parseType());
+
+  return std::make_unique<ParamDecl>(line, col, std::move(ident), std::move(*type));
+}
+
 std::optional<Type> Parser::parseType(){
   TokenKind kind = nextToken.kind;
+
+  if(kind == TokenKind::Number){
+    eatNextToken();
+    return Type::builtinNumber();
+  }
 
   if(kind == TokenKind::Void){
     eatNextToken();
@@ -95,7 +174,7 @@ std::optional<Type> Parser::parseType(){
 }
 
 std::unique_ptr<Expr> Parser::parseExpr(){
-  return Parser::parsePrimary();
+  return Parser::parsePostfixExpr();
 }
 
 std::unique_ptr<ReturnStmt> Parser::parseReturnStmt(){
@@ -120,6 +199,11 @@ std::unique_ptr<Stmt> Parser::parseStmt(){
   if(nextToken.kind == TokenKind::Return){
     return parseReturnStmt();
   }
+  varOrReturn(expr, parseExpr());
+  matchOrReturn(TokenKind::SemiColon, "expected ';' at the end of expr");
+  eatNextToken();
+
+  return expr;
 }
 
 std::unique_ptr<Block> Parser::parseBlock(){
@@ -141,6 +225,34 @@ std::unique_ptr<Block> Parser::parseBlock(){
   return std::make_unique<Block>(line, col, std::move(statements));
 }
 
+std::unique_ptr<std::vector<std::unique_ptr<ParamDecl>>>
+Parser::parseParamList(){
+  matchOrReturn(TokenKind::Lpar, "expected '('");
+  eatNextToken();
+
+  std::vector<std::unique_ptr<ParamDecl>> paramList;
+
+  while(true){
+    if(nextToken.kind == TokenKind::Rpar)
+      break;
+    
+    matchOrReturn(TokenKind::Ident, "expected param decl");
+
+    varOrReturn(paramDecl, parseParamDecl());
+    paramList.emplace_back(std::move(paramDecl));
+
+    if(nextToken.kind != TokenKind::Comma) 
+      break;
+    
+    eatNextToken();
+  }
+
+  matchOrReturn(TokenKind::Rpar, "expected ')'");
+  eatNextToken();
+
+  return std::make_unique<std::vector<std::unique_ptr<ParamDecl>>>(std::move(paramList));
+}
+
 std::unique_ptr<FunctionDecl> Parser::parseFunctionDecl(){
   int line = nextToken.line;
   int col = nextToken.col;
@@ -148,11 +260,8 @@ std::unique_ptr<FunctionDecl> Parser::parseFunctionDecl(){
   matchOrReturn(TokenKind::Ident, "expected ident");
   std::string functionIdent = *nextToken.value;
   eatNextToken();
-  matchOrReturn(TokenKind::Lpar, "expected '('");
-  eatNextToken();
 
-  matchOrReturn(TokenKind::Rpar, "expected ')'");
-  eatNextToken();
+  varOrReturn(paramList, parseParamList());
 
   matchOrReturn(TokenKind::Colon, "expected ':'");
   eatNextToken();
@@ -162,7 +271,7 @@ std::unique_ptr<FunctionDecl> Parser::parseFunctionDecl(){
   matchOrReturn(TokenKind::Lbrace, "expected function body");
   varOrReturn(block, parseBlock());
 
-  return std::make_unique<FunctionDecl>(line, col, functionIdent, *type, std::move(block));
+  return std::make_unique<FunctionDecl>(line, col, functionIdent, *type, std::move(*paramList), std::move(block));
 }
 
 std::pair<std::vector<std::unique_ptr<FunctionDecl>>, bool>

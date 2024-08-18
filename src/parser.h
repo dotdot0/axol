@@ -41,6 +41,18 @@ struct Expr : public Stmt{
   Expr(int line, int col): Stmt(line, col){}
 };
 
+struct CallExpr: public Expr{
+  std::unique_ptr<Expr> callee;
+  std::vector<std::unique_ptr<Expr>> arguments;
+
+  CallExpr(int line, int col, std::unique_ptr<Expr> callee, std::vector<std::unique_ptr<Expr>> arguments):
+    Expr(line, col),
+    callee(std::move(callee)),
+    arguments(std::move(arguments)){}
+  
+  void dump(std::size_t level = 0) const override;
+};
+
 struct DeclRefExpr: public Expr{
   std::string identifier;
 
@@ -86,12 +98,28 @@ struct ReturnStmt : public Stmt{
 
 };
 
+struct ParamDecl: public Decl{
+  Type type;
+
+  ParamDecl(int line, int col, std::string ident, Type type)
+  : Decl(line, col, std::move(ident)),
+    type(std::move(type)){}
+  
+  void dump(std::size_t level = 0) const override;
+};
+
 struct FunctionDecl: public Decl{
   Type type;
+  std::vector<std::unique_ptr<ParamDecl>> params;
   std::unique_ptr<Block> body;
 
-  FunctionDecl(int line, int col, std::string ident, Type type, std::unique_ptr<Block> body): Decl(line, col, std::move(ident))
-  , body(std::move(body)), type(std::move(type)){}
+  FunctionDecl(int line, int col, std::string ident, Type type, 
+  std::vector<std::unique_ptr<ParamDecl>> params,
+  std::unique_ptr<Block> body): 
+   Decl(line, col, std::move(ident))
+  ,params(std::move(params))
+  ,body(std::move(body))
+  ,type(std::move(type)){}
 
   void dump(std::size_t level = 0) const override;
 };
@@ -113,6 +141,10 @@ class Parser{
   std::unique_ptr<Stmt> parseStmt();
   std::unique_ptr<Expr> parsePrimary();
   std::unique_ptr<Expr> parseExpr();
+  std::unique_ptr<Expr> parsePostfixExpr();
+  std::unique_ptr<std::vector<std::unique_ptr<Expr>>> parseArgumentList();
+  std::unique_ptr<ParamDecl> parseParamDecl();
+  std::unique_ptr<std::vector<std::unique_ptr<ParamDecl>>> parseParamList();
 };
 
 #endif

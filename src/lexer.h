@@ -5,7 +5,7 @@
 #include <optional>
 #include <iostream>
 
-constexpr char charTokens[] = {'\0', '(', ')', '{', '}', ':', ';'};
+constexpr char charTokens[] = {'\0', '(', ')', '{', '}', ':', ';', ','};
 
 
 enum class TokenKind: char{
@@ -20,6 +20,7 @@ enum class TokenKind: char{
   Rbrace = charTokens[4],
   Colon  = charTokens[5],
   SemiColon = charTokens[6],
+  Comma = charTokens[7],
   Unk    = -128,
   Number,
 };
