@@ -1,8 +1,8 @@
 #include "parser.h"
 
-#define matchOrReturn(tok, msg) \                                               
-  if (nextToken.kind != tok) \                                                
-    return report(nextToken.line, nextToken.col, msg);
+#define matchOrReturn(tok, msg) \
+  if(nextToken.kind != tok) \
+    report(nextToken.line, nextToken.col, msg);
 
 
 #define varOrReturn(var, init) \
