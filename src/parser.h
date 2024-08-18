@@ -134,6 +134,7 @@ class Parser{
   std::pair<std::vector<std::unique_ptr<FunctionDecl>>, bool> 
   parseSourceFile();
   void synchronizeOn(TokenKind kind);
+  void synchronize();
   std::unique_ptr<FunctionDecl> parseFunctionDecl();
   std::optional<Type> parseType();
   std::unique_ptr<Block> parseBlock();

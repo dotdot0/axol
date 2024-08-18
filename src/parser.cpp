@@ -76,6 +76,29 @@ void Parser::synchronizeOn(TokenKind kind){
   while(nextToken.kind != TokenKind::Func && nextToken.kind != TokenKind::Eof) eatNextToken();
 }
 
+void Parser::synchronize(){
+  isIncompAST = true;
+  int braces = 0;
+  while(true){
+    TokenKind kind = nextToken.kind;
+
+    if(kind == TokenKind::Lbrace) ++braces;
+
+    else if(kind == TokenKind::Rbrace) {
+      if(braces == 0) break;
+      if(braces == 1) {
+        eatNextToken();
+        break;
+      }else if(kind == TokenKind::SemiColon && braces == 0){
+        eatNextToken();
+        break;
+      }else if(kind == TokenKind::Func || kind == TokenKind::Eof)
+        break;
+      --braces;
+    }
+  }
+}
+
 
 std::unique_ptr<Expr> Parser::parsePrimary(){
   int line = nextToken.line;
@@ -218,6 +241,9 @@ std::unique_ptr<Block> Parser::parseBlock(){
       return report(nextToken.line, nextToken.col, "expected '}' at the end of the block.");
     
     varOrReturn(stmt, parseStmt());
+    if(!stmt) {
+      synchronize();
+    }
     statements.emplace_back(std::move(stmt)); 
   }
   eatNextToken();
