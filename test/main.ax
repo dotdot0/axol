@@ -1,8 +1,7 @@
-func main() : void {
+func main() : number {
+  return 90;
 }
 
-func () : void{}
-
-func add() : void {
-  
+func add() : number {
+  return 78.123; 
 }

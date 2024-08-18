@@ -16,6 +16,25 @@ Token Lexer::getNextToken(){
     return Token{line, col, TokenKind::Ident, std::move(value)};
   }
 
+  if(isNum(curr)){
+    std::string value{curr};
+
+    while(isNum(peekNextChar()))
+      value+=consume();
+    
+    if(peekNextChar() != '.') 
+      return Token{line, col, TokenKind::Number, std::move(value)};
+    
+    value+=consume();
+    if(!isNum(peekNextChar()))
+      return Token{line, col, TokenKind::Unk};
+
+    while(isNum(peekNextChar()))
+      value+=consume();
+    
+    return Token{line, col, TokenKind::Number, std::move(value)};
+  }
+
   for(auto &c: charTokens) 
     if(c == curr) return Token{ line, col, static_cast<TokenKind>(c) };
   

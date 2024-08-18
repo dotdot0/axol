@@ -20,8 +20,25 @@ void FunctionDecl::dump(std::size_t level) const {
   body->dump(level+1);
 }
 
-void Block::dump(std::size_t level) const{
+void ReturnStmt::dump(std::size_t level) const {
+  std::cerr << ident_(level) << "ReturnStmt\n";
+  if(expr)
+    expr->dump(level+1);
+}
+
+void Block::dump(std::size_t level) const {
   std::cerr << ident_(level) << "Block\n";
+  for(auto &&stmt: statements)
+      stmt->dump(level+1); 
+
+}
+
+void NumberLiteral::dump(std::size_t level) const {
+  std::cerr << ident_(level) << "NumberLiteral: " << value << "\n";
+}
+
+void DeclRefExpr::dump(std::size_t level) const {
+  std::cerr << ident_(level) << "DeclRefExpr: " << identifier << "\n";
 }
 
 void Parser::eatNextToken(){
@@ -37,6 +54,26 @@ std::nullptr_t report(int line, int col, std::string_view message, bool isWarnin
 void Parser::synchronizeOn(TokenKind kind){
   isIncompAST = true;
   while(nextToken.kind != TokenKind::Func && nextToken.kind != TokenKind::Eof) eatNextToken();
+}
+
+
+std::unique_ptr<Expr> Parser::parsePrimary(){
+  int line = nextToken.line;
+  int col  = nextToken.col;
+
+  if(nextToken.kind == TokenKind::Number){
+    auto literal = std::make_unique<NumberLiteral>(line, col, *nextToken.value);
+    eatNextToken();
+    return literal;
+  }
+
+  if(nextToken.kind == TokenKind::Ident){
+    auto literal = std::make_unique<DeclRefExpr>(line, col, *nextToken.value);
+    eatNextToken();
+    return literal;
+  }
+
+  return report(nextToken.line, nextToken.col, "expected expr");
 }
 
 std::optional<Type> Parser::parseType(){
@@ -57,14 +94,51 @@ std::optional<Type> Parser::parseType(){
   return std::nullopt;
 }
 
-std::unique_ptr<Block> Parser::parseBlock(){
+std::unique_ptr<Expr> Parser::parseExpr(){
+  return Parser::parsePrimary();
+}
+
+std::unique_ptr<ReturnStmt> Parser::parseReturnStmt(){
   int line = nextToken.line;
   int col = nextToken.col;
   eatNextToken();
-  matchOrReturn(TokenKind::Rbrace, "expected '}' at the end of a block");
+
+  std::unique_ptr<Expr> expr;
+  if(nextToken.kind != TokenKind::SemiColon){
+    expr = parseExpr();
+    if(!expr)
+      return nullptr;
+  }
+
+  matchOrReturn(TokenKind::SemiColon, "expected ';' at the end of a return statement")
   eatNextToken();
 
-  return std::make_unique<Block>(line, col);
+  return std::make_unique<ReturnStmt>(line, col, std::move(expr));
+}
+
+std::unique_ptr<Stmt> Parser::parseStmt(){
+  if(nextToken.kind == TokenKind::Return){
+    return parseReturnStmt();
+  }
+}
+
+std::unique_ptr<Block> Parser::parseBlock(){
+  int line = nextToken.line;
+  int col = nextToken.col;
+  std::vector<std::unique_ptr<Stmt>> statements;
+  eatNextToken();
+  while(true){
+    if(nextToken.kind == TokenKind::Rbrace) break;
+
+    if(nextToken.kind == TokenKind::Eof || nextToken.kind == TokenKind::Func)
+      return report(nextToken.line, nextToken.col, "expected '}' at the end of the block.");
+    
+    varOrReturn(stmt, parseStmt());
+    statements.emplace_back(std::move(stmt)); 
+  }
+  eatNextToken();
+
+  return std::make_unique<Block>(line, col, std::move(statements));
 }
 
 std::unique_ptr<FunctionDecl> Parser::parseFunctionDecl(){

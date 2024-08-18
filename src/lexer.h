@@ -12,6 +12,7 @@ enum class TokenKind: char{
   Ident  = 1,
   Func,
   Void,
+  Return,
   Eof    = charTokens[0],
   Lpar   = charTokens[1],
   Rpar   = charTokens[2], 
@@ -19,12 +20,14 @@ enum class TokenKind: char{
   Rbrace = charTokens[4],
   Colon  = charTokens[5],
   SemiColon = charTokens[6],
-  Unk    = -128
+  Unk    = -128,
+  Number,
 };
 
 const std::unordered_map<std::string, TokenKind> keywords = {
   {"void", TokenKind::Void},
-  {"func", TokenKind::Func}
+  {"func", TokenKind::Func},
+  {"return", TokenKind::Return},
 };
 
 struct SourceFile{
