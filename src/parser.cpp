@@ -99,7 +99,6 @@ void Parser::synchronize(){
   }
 }
 
-
 std::unique_ptr<Expr> Parser::parsePrimary(){
   int line = nextToken.line;
   int col  = nextToken.col;
