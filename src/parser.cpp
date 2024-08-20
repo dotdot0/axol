@@ -104,7 +104,7 @@ std::unique_ptr<Expr> Parser::parsePrimary(){
   int col  = nextToken.col;
 
   if(nextToken.kind == TokenKind::Number){
-    auto literal = std::make_unique<NumberLiteral>(line, col, *nextToken.value);
+    auto literal = std::make_unique<NumberLiteral>(line, col, nextToken.value.value());
     eatNextToken();
     return literal;
   }
