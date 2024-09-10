@@ -28,6 +28,7 @@ enum class TokenKind: char{
 const std::unordered_map<std::string, TokenKind> keywords = {
   {"void", TokenKind::Void},
   {"func", TokenKind::Func},
+  {"def",  TokenKind::Func},
   {"return", TokenKind::Return},
 };
 
@@ -105,7 +106,6 @@ class Lexer{
   bool isNum(char c) { return '0' <= c && c <= '9'; }
   bool isAlNum(char c) { return isAlpha(c) || isNum(c); }
 };
-
 
 
 

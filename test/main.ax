@@ -5,8 +5,13 @@ func main() : number {
 
 func add(x: number, y: number) : number {
   return 78.123; 
+  x;
 }
 
 func sub(x: number, y: number) : number {
+  return 3213;
+}
+
+def mul(x: number, y: number): number {
   return 3213;
 }

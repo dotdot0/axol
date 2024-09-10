@@ -61,6 +61,42 @@ void ParamDecl::dump(std::size_t level) const {
   std::cerr << ident_(level+1) << ident << ": " << type.name << "\n";
 }
 
+void ResolvedNumberLiteral::dump(std::size_t level) const {
+  std::cerr << ident_(level) << "ResolvedNumberLiteral: " << value << "\n";
+}
+
+void ResolvedDeclRefExpr::dump(std::size_t level) const {
+  std::cerr << ident_(level) << "ResolvedDeclRedExpr: @(" << decl << ") " << decl->ident << "\n";
+}
+
+void ResolvedBlock::dump(std::size_t level) const {
+  std::cerr << ident_(level) << "ResolvedBlock\n";
+
+  for(auto &&stmt: statements)
+    stmt->dump(level+1);
+  
+}
+
+void ResolvedParamDecl::dump(std::size_t level) const {
+  std::cerr << ident_(level) << "ResolvedParamDecl: @(" << this << ") " << ident << ":" << "\n";
+}
+
+void ResolvedFunctionDecl::dump(std::size_t level) const {
+  std::cerr << ident_(level) << "ResolvedFunctionDecl: " << ident << ":" << "\n";
+
+  for(auto &&param: params)
+    param->dump(level+1);
+  
+  body->dump(level+1);
+}
+
+void ResolvedReturnStmt::dump(std::size_t level) const {
+  std::cerr << ident_(level) << "ResolvedReturnStmt\n";
+
+  if(expr)
+    expr->dump(level+1);
+}
+
 void Parser::eatNextToken(){
   nextToken = lexer->getNextToken();
 }
