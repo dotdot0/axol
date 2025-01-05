@@ -1,6 +1,6 @@
 #include <iostream>
 #include <fstream>
-#include "parser.h"
+#include "../include/parser.h"
 
 int main(int argc, char *argv[]){
   std::ifstream inp;

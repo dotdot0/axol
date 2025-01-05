@@ -1,4 +1,4 @@
-#include "parser.h"
+#include "../include/parser.h"
 
 #define matchOrReturn(tok, msg) \
   if(nextToken.kind != tok) \

@@ -1,4 +1,4 @@
-#include "lexer.h"
+#include "../include/lexer.h"
 
 Token Lexer::getNextToken(){
   char curr = consume();
