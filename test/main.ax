@@ -9,9 +9,13 @@ func add(x: number, y: number) : number {
 }
 
 func sub(x: number, y: number) : number {
-  return 3213;
+  return 3213.23133;
 }
 
 def mul(x: number, y: number): number {
   return 3213;
+}
+
+def nn() : void {
+  return 560;
 }
