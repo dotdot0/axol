@@ -1,7 +1,4 @@
-func main() : number {
-  return 90;
-  add(1, 2);
-}
+fn
 
 func add(x: number, y: number) : number {
   return 78.123; 

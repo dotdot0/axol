@@ -32,7 +32,7 @@ void ReturnStmt::dump(std::size_t level) const {
 }
 
 void Block::dump(std::size_t level) const {
-  std::cerr << ident_(level) << "Block\n";
+  std::cerr << ident_(level) << "Block:\n";
   for(auto &&stmt: statements)
       stmt->dump(level+1); 
 
