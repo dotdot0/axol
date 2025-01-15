@@ -25,10 +25,12 @@ enum class TokenKind: char{
   Number,
 };
 
+// still not sure out of func, fn, and def which one should be used for function so all of them are here :)
 const std::unordered_map<std::string, TokenKind> keywords = {
   {"void", TokenKind::Void},
   {"func", TokenKind::Func},
   {"def",  TokenKind::Func},
+  {"fn", TokenKind::Func},
   {"return", TokenKind::Return},
 };
 
