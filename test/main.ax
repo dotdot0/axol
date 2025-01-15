@@ -1,4 +1,7 @@
-fn
+fn main() : number {
+  mul(10, nn());
+  return 0;
+}
 
 func add(x: number, y: number) : number {
   return 78.123; 
@@ -13,6 +16,6 @@ def mul(x: number, y: number): number {
   return 3213;
 }
 
-def nn() : void {
+def nn() : number {
   return 560;
 }
