@@ -1,9 +1,13 @@
+#ifndef SEMA_H
+
 #include <iostream>
 #include <string>
 #include <vector>
 #include "lexer.h"
 #include "type.h"
 #include <memory>
+#include <optional>
+#include <llvm/Support/ErrorHandling.h>
 
 struct ResolvedStmt {
   int line;
@@ -111,3 +115,49 @@ struct ResolvedCallExpr: public ResolvedExpr{
   
   void dump(size_t level = 0) const override;
 };
+
+struct ResolvedReturnStmt : public ResolvedStmt {
+  std::unique_ptr<ResolvedExpr> expr;
+
+  ResolvedReturnStmt(int line, int col, std::unique_ptr<ResolvedExpr> expr = nullptr)
+  : ResolvedStmt(line,col),
+    expr(std::move(expr)) {}
+  
+  void dump(size_t level = 0) const override;
+};
+
+class Sema {
+  std::vector<std::unique_ptr<FunctionDecl>> ast;
+
+  std::vector<std::vector<ResolvedDecl *>> scopes;
+
+  ResolvedFunctionDecl *currentFunction;
+
+  class ScopeRAII {
+    Sema *sema;
+
+    public:
+      explicit ScopeRAII(Sema *sema)
+      : sema(std::move(sema)) {
+        sema->scopes.emplace_back();
+      }
+      ~ScopeRAII() { sema->scopes.pop_back(); }
+  };
+
+  public:
+    explicit Sema(std::vector<std::unique_ptr<FunctionDecl>> ast)
+    : ast(std::move(ast)){}
+
+    std::vector<std::unique_ptr<ResolvedFunctionDecl>> resolveAST();
+    std::pair<ResolvedDecl *, int> lookupDecl(const std::string id);
+    bool insertDeclToCurrentScope(ResolvedDecl &decl);
+    std::unique_ptr<ResolvedFunctionDecl> createBuiltinPrintln();
+    std::optional<Type> resolveType(Type parsedType);
+    std::unique_ptr<ResolvedFunctionDecl> resolveFunctionDeclaration(const FunctionDecl &function);
+    std::unique_ptr<ResolvedParamaDecl> resolveParamDecl(const ParamDecl &param);
+    std::unique_ptr<ResolvedBlock> resolveBlock(const Block &block);
+    std::unique_ptr<ResolvedStmt> resolveStmt(const Stmt &stmt);
+    std::unique_ptr<ResolvedReturnStmt> resolveReturnStmt(const ReturnStmt &returnStmt);
+};
+
+#endif

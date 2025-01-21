@@ -7,6 +7,8 @@
 #include<vector>
 #include"type.h"
 
+std::nullptr_t report(int line, int col, std::string_view message, bool isWarning = false);
+
 struct Decl{
   int line;
   int col;
