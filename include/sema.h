@@ -8,6 +8,7 @@
 #include <memory>
 #include <optional>
 #include <llvm/Support/ErrorHandling.h>
+#include "parser.h"
 
 struct ResolvedStmt {
   int line;
@@ -127,6 +128,7 @@ struct ResolvedReturnStmt : public ResolvedStmt {
 };
 
 class Sema {
+  public:
   std::vector<std::unique_ptr<FunctionDecl>> ast;
 
   std::vector<std::vector<ResolvedDecl *>> scopes;
@@ -144,7 +146,6 @@ class Sema {
       ~ScopeRAII() { sema->scopes.pop_back(); }
   };
 
-  public:
     explicit Sema(std::vector<std::unique_ptr<FunctionDecl>> ast)
     : ast(std::move(ast)){}
 
@@ -158,6 +159,9 @@ class Sema {
     std::unique_ptr<ResolvedBlock> resolveBlock(const Block &block);
     std::unique_ptr<ResolvedStmt> resolveStmt(const Stmt &stmt);
     std::unique_ptr<ResolvedReturnStmt> resolveReturnStmt(const ReturnStmt &returnStmt);
+    std::unique_ptr<ResolvedExpr> resolveExpr(const Expr &expr);
+    std::unique_ptr<ResolvedDeclRefExpr> resolveDeclRefExpr(const DeclRefExpr &declRefExpr, bool isCallee = false);
+    std::unique_ptr<ResolvedCallExpr> resolveCallExpr(const CallExpr &call);
 };
 
 #endif

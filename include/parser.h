@@ -1,4 +1,5 @@
 #ifndef PARSER_H
+#define PARSER_H
 
 #include<iostream>
 #include<string>
@@ -6,6 +7,7 @@
 #include"lexer.h"
 #include<vector>
 #include"type.h"
+
 
 std::nullptr_t report(int line, int col, std::string_view message, bool isWarning = false);
 

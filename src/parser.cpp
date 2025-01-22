@@ -1,5 +1,6 @@
 #include "../include/parser.h"
 
+
 #define matchOrReturn(tok, msg) \
   if(nextToken.kind != tok) \
     report(nextToken.line, nextToken.col, msg);
@@ -9,7 +10,6 @@
   auto var = (init); \
   if(!var) \
     return nullptr;
-
 
 std::string ident_(std::size_t level) {
   return std::string(level * 2, ' ');
@@ -65,7 +65,7 @@ void Parser::eatNextToken(){
   nextToken = lexer->getNextToken();
 }
 
-std::nullptr_t report(int line, int col, std::string_view message, bool isWarning = false){
+std::nullptr_t report(int line, int col, std::string_view message, bool isWarning){
   std::cerr << line << ":" << col << ": " << (isWarning ? "warning: " : "error: ")
   << message << "\n";
   return nullptr;

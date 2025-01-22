@@ -5,8 +5,10 @@ TEST_DIR:=test
 
 SRC_FILES:=$(wildcard $(SRC_DIR)/*.cpp)
 
+LDFLAGS := $(shell llvm-config --ldflags --libs)
+
 all:
-	$(CC) $(SRC_FILES) -o $(C)
+	$(CC) $(SRC_FILES) $(LDFLAGS) -o $(C)
 
 run:
 	./$(C) $(TEST_DIR)/main.ax

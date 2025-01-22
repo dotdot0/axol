@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include "../include/parser.h"
+#include "../include/sema.h"
 
 int main(int argc, char *argv[]){
 
@@ -19,7 +20,14 @@ int main(int argc, char *argv[]){
 
   Parser parser(lex);
   auto functions = parser.parseSourceFile();
-  for(auto &fn: functions.first){
-    fn->dump();
-  }
+  // for(auto &fn: functions.first){
+  //   fn->dump();
+  // }
+  // std::cout << "================" << "\n";
+
+  Sema sema(functions.first);
+  // sema.resolveAST();
+  // for(auto &it: sema.ast){
+  //   it->dump(0);
+  // }
 }

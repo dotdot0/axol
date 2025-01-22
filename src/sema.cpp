@@ -1,6 +1,17 @@
 #include "../include/sema.h"
 #include "../include/parser.h"
 
+
+#define matchOrReturn(tok, msg) \
+  if(nextToken.kind != tok) \
+    report(nextToken.line, nextToken.col, msg);
+
+
+#define varOrReturn(var, init) \
+  auto var = (init); \
+  if(!var) \
+    return nullptr;
+
 std::string ident_s(std::size_t level) {
   return std::string(level * 2, ' ');
 }
@@ -67,12 +78,13 @@ bool Sema::insertDeclToCurrentScope(ResolvedDecl &decl) {
     return false;
   }
   scopes.back().emplace_back(&decl);
+  return true;
 }
 
 std::unique_ptr<ResolvedFunctionDecl> Sema::createBuiltinPrintln() {
   int line, col = 0;
   auto param = std::make_unique<ResolvedParamaDecl>(line, col, "n", Type::builtinNumber());
-  std::vector<std::unique_ptr<ResolvedFunctionDecl>> params;
+  std::vector<std::unique_ptr<ResolvedParamaDecl>> params;
   params.emplace_back(std::move(param));
 
   auto block = std::make_unique<ResolvedBlock>(
@@ -89,8 +101,71 @@ std::optional<Type> Sema::resolveType(Type parsedType) {
   return parsedType;
 }
 
-std::unique_ptr<ResolvedReturnStmt> Sema::resolveReturnStmt(const ReturnStmt &returnStmt) {
+std::unique_ptr<ResolvedCallExpr> Sema::resolveCallExpr(const CallExpr &call) {
+  const auto *dre = dynamic_cast<const DeclRefExpr *>(call.callee.get());
 
+  if(!dre)
+    return report(call.line, call.col, "expression cannot be called as a function.");
+  
+  varOrReturn(resolvedCallee, resolveDeclRefExpr(*dre, true));
+
+  const auto *resolvedFunctionDecl = dynamic_cast<const ResolvedFunctionDecl *>(resolvedCallee->decl);
+
+  if(!resolvedFunctionDecl)
+    return report(call.line, call.col, "calling non-function type");
+  
+  if(call.arguments.size() != resolvedFunctionDecl->params.size())
+    return report(call.line, call.col, "argument count mismatch in function call");
+  
+  std::vector<std::unique_ptr<ResolvedExpr>> resolvedArguments;
+  int idx = 0;
+  for(auto &&arg: call.arguments){
+    varOrReturn(resolvedArg, resolveExpr(*arg));
+
+    if(resolvedArg->type.kind != resolvedFunctionDecl->params[idx]->type.kind)
+      return report(resolvedArg->line, resolvedArg->col, "unexpected type of argument.");
+    
+    ++idx;
+    resolvedArguments.emplace_back(std::move(resolvedArg));
+  }
+  return std::make_unique<ResolvedCallExpr>(
+    call.line, call.col, *resolvedFunctionDecl, std::move(resolvedArguments)
+  );
+}
+
+std::unique_ptr<ResolvedDeclRefExpr> Sema::resolveDeclRefExpr(const DeclRefExpr &declRefExpr, bool isCallee) {
+  ResolvedDecl *decl = lookupDecl(declRefExpr.identifier).first;
+  if(!decl)
+    return report(declRefExpr.line, declRefExpr.col, "symbol '"
+    + declRefExpr.identifier + "' not found.");
+  
+  if(!isCallee && dynamic_cast<ResolvedFunctionDecl *>(decl))
+    return report(declRefExpr.line, declRefExpr.col, "expected to call function '"
+    + declRefExpr.identifier + "'");
+  
+  return std::make_unique<ResolvedDeclRefExpr>(declRefExpr.line, declRefExpr.col, *decl);
+}
+
+std::unique_ptr<ResolvedExpr> Sema::resolveExpr(const Expr &expr) {
+  if(const auto *number = dynamic_cast<const NumberLiteral *>(&expr))
+    return std::make_unique<ResolvedNumberLiteral>(number->line, number->col, std::stod(number->value));
+  
+
+  llvm_unreachable("unexpected expression");
+}
+
+std::unique_ptr<ResolvedReturnStmt> Sema::resolveReturnStmt(const ReturnStmt &returnStmt) {
+  std::unique_ptr<ResolvedExpr> resolvedExpr;
+  if(returnStmt.expr) {
+    resolvedExpr = resolveExpr(*returnStmt.expr);
+    if(!resolvedExpr)
+      return nullptr;
+    
+    if(currentFunction->type.kind != resolvedExpr->type.kind)
+      return report(resolvedExpr->line, resolvedExpr->col, "Unexpected Token Type");
+  }
+
+  return std::make_unique<ResolvedReturnStmt>(returnStmt.line, returnStmt.col, std::move(resolvedExpr));
 }
 
 std::unique_ptr<ResolvedParamaDecl> Sema::resolveParamDecl(const ParamDecl &param) {
@@ -155,7 +230,7 @@ std::unique_ptr<ResolvedFunctionDecl> Sema::resolveFunctionDeclaration(const Fun
       return report(function.line, function.col, "'main' function is expected to have no arguments");
   }
 
-  std::vector<std::unique_ptr<ResolvedFunctionDecl>> resolvedParams;
+  std::vector<std::unique_ptr<ResolvedParamaDecl>> resolvedParams;
 
   ScopeRAII paramScope(this);
 
@@ -203,7 +278,7 @@ std::vector<std::unique_ptr<ResolvedFunctionDecl>> Sema::resolveAST() {
       insertDeclToCurrentScope(*param);
     }
 
-    auto resolvedBody = resolvedBlock(*ast[i - 1]->body);
+    auto resolvedBody = resolveBlock(*ast[i - 1]->body);
     if(!resolvedBody){
       error = true;
       continue;
