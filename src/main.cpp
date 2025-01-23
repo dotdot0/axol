@@ -25,9 +25,10 @@ int main(int argc, char *argv[]){
   // }
   // std::cout << "================" << "\n";
 
-  Sema sema(functions.first);
-  // sema.resolveAST();
-  // for(auto &it: sema.ast){
-  //   it->dump(0);
-  // }
+  Sema sema(std::move(functions.first));
+  auto functionsResolved = sema.resolveAST();
+  for(auto &function: functionsResolved){
+    function->dump(0);
+  }
+  
 }

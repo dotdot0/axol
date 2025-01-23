@@ -10,7 +10,7 @@ struct Type{
   std::string name;
 
   static Type builtinVoid() { return {Kind::Void, "void"}; }
-  static Type builtinNumber() { return {Kind::Number, "Number"}; }
+  static Type builtinNumber() { return {Kind::Number, "number"}; }
   static Type custom(const std::string &name) { return {Kind::Custom, name}; }
 
   private:

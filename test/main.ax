@@ -1,11 +1,8 @@
-fn main() : number {
-  mul(10, nn());
-  return 0;
+fn main() : void {
 }
 
 func add(x: number, y: number) : number {
   return 78.123; 
-  x;
 }
 
 func sub(x: number, y: number) : number {

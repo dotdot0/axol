@@ -96,8 +96,11 @@ std::unique_ptr<ResolvedFunctionDecl> Sema::createBuiltinPrintln() {
 }
 
 std::optional<Type> Sema::resolveType(Type parsedType) {
-  if(parsedType.kind == Type::Kind::Custom)
-    return std::nullopt;
+  // std::cout << parsedType.name << "\n";
+  // if (parsedType.kind == Type::Kind::Number || parsedType.name == "number") {
+  //   return Type::builtinNumber(); // Built-in type 'number'
+  // }
+  if(parsedType.kind == Type::Kind::Custom) return std::nullopt;
   return parsedType;
 }
 
@@ -217,7 +220,10 @@ std::unique_ptr<ResolvedBlock> Sema::resolveBlock(const Block &block) {
 }
 
 std::unique_ptr<ResolvedFunctionDecl> Sema::resolveFunctionDeclaration(const FunctionDecl &function) {
+  std::cout << function.type.name << "\n";
   std::optional<Type> type = resolveType(function.type);
+  // std::cout << type.value().name << "\n";
+
   if(!type)
     return report(function.line, function.col, "function '" + function.ident 
     + "' has invalid '" + function.type.name + "' type");
