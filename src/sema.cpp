@@ -164,7 +164,6 @@ std::unique_ptr<ResolvedExpr> Sema::resolveExpr(const Expr &expr) {
 }
 
 std::unique_ptr<ResolvedReturnStmt> Sema::resolveReturnStmt(const ReturnStmt &returnStmt) {
-  currentFunction->dump(0);
   std::unique_ptr<ResolvedExpr> resolvedExpr;
   if(returnStmt.expr) {
     resolvedExpr = resolveExpr(*returnStmt.expr);
@@ -227,7 +226,6 @@ std::unique_ptr<ResolvedBlock> Sema::resolveBlock(const Block &block) {
 }
 
 std::unique_ptr<ResolvedFunctionDecl> Sema::resolveFunctionDeclaration(const FunctionDecl &function) {
-  std::cout << function.type.name << "\n";
   std::optional<Type> type = resolveType(function.type);
   // std::cout << type.value().name << "\n";
 

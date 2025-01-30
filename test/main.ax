@@ -6,7 +6,7 @@ fn add(a: number, b: number) : number {
   return 78.123; 
 }
 
-fn sub(a: number, b: number) : number {
+fn sub(c: number, d: number) : number {
   return 3213.23133;
 }
 
