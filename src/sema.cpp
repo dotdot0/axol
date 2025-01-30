@@ -77,6 +77,9 @@ bool Sema::insertDeclToCurrentScope(ResolvedDecl &decl) {
     report(decl.line, decl.col, "redeclaration of '" + decl.ident + '\'');
     return false;
   }
+  if(scopes.empty()){
+    scopes.emplace_back();
+  }
   scopes.back().emplace_back(&decl);
   return true;
 }
@@ -97,10 +100,11 @@ std::unique_ptr<ResolvedFunctionDecl> Sema::createBuiltinPrintln() {
 
 std::optional<Type> Sema::resolveType(Type parsedType) {
   // std::cout << parsedType.name << "\n";
-  // if (parsedType.kind == Type::Kind::Number || parsedType.name == "number") {
-  //   return Type::builtinNumber(); // Built-in type 'number'
-  // }
-  if(parsedType.kind == Type::Kind::Custom) return std::nullopt;
+  if (parsedType.kind == Type::Kind::Number || parsedType.name == "number") {
+    return Type::builtinNumber(); // Built-in type 'number'
+  }
+  if(parsedType.kind == Type::Kind::Custom)
+   return std::nullopt;
   return parsedType;
 }
 
@@ -153,11 +157,14 @@ std::unique_ptr<ResolvedExpr> Sema::resolveExpr(const Expr &expr) {
   if(const auto *number = dynamic_cast<const NumberLiteral *>(&expr))
     return std::make_unique<ResolvedNumberLiteral>(number->line, number->col, std::stod(number->value));
   
+  if (const auto *declRefExpr = dynamic_cast<const DeclRefExpr *>(&expr))
+    return resolveDeclRefExpr(*declRefExpr);
 
   llvm_unreachable("unexpected expression");
 }
 
 std::unique_ptr<ResolvedReturnStmt> Sema::resolveReturnStmt(const ReturnStmt &returnStmt) {
+  currentFunction->dump(0);
   std::unique_ptr<ResolvedExpr> resolvedExpr;
   if(returnStmt.expr) {
     resolvedExpr = resolveExpr(*returnStmt.expr);
@@ -196,7 +203,7 @@ std::unique_ptr<ResolvedBlock> Sema::resolveBlock(const Block &block) {
 
   bool error = false;
 
-  int reportUnreachableCount = 1;
+  int reportUnreachableCount = 0;
 
   ScopeRAII blockScope(this);
   for(auto &&stmt: block.statements) {
@@ -279,7 +286,7 @@ std::vector<std::unique_ptr<ResolvedFunctionDecl>> Sema::resolveAST() {
   for(size_t i = 1; i < resolvedTree.size(); ++i){
     currentFunction = resolvedTree[i].get();
 
-    ScopeRAII paramScope(this);
+    ScopeRAII(this);
     for(auto &&param : currentFunction->params){
       insertDeclToCurrentScope(*param);
     }
