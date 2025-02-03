@@ -1,9 +1,8 @@
 fn main() : void {
-  31232;
 }
 
 fn add(a: number, b: number) : number {
-  return 78.123; 
+  return 3213; 
 }
 
 fn sub(c: number, d: number) : number {
@@ -11,7 +10,7 @@ fn sub(c: number, d: number) : number {
 }
 
 fn mul(x: number, y: number): number {
-  return 3213;
+  return 3123;
 }
 
 fn nn() : number {
