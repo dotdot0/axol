@@ -84,9 +84,9 @@ bool Sema::insertDeclToCurrentScope(ResolvedDecl &decl) {
     report(decl.line, decl.col, "redeclaration of '" + decl.ident + '\'');
     return false;
   }
-  if(scopes.empty()){
-    scopes.emplace_back();
-  }
+  // if(scopes.empty()){
+  //   scopes.emplace_back();
+  // }
   scopes.back().emplace_back(&decl);
   return true;
 }
