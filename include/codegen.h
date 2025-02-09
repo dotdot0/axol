@@ -17,6 +17,8 @@ class Codegen{
   public:
     Codegen(std::vector<std::unique_ptr<ResolvedFunctionDecl>> resolvedAST, std::string_view source_path);
     llvm::Module *generateIR();
+    llvm::Type *generateType(Type type);
+    void generateFunctionDecl(const ResolvedFunctionDecl &functionDecl);
 };
 
 #endif

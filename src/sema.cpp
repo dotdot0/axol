@@ -170,6 +170,9 @@ std::unique_ptr<ResolvedExpr> Sema::resolveExpr(const Expr &expr) {
   
   if (const auto *declRefExpr = dynamic_cast<const DeclRefExpr *>(&expr))
     return resolveDeclRefExpr(*declRefExpr);
+  
+  if(const auto *callRefExpr = dynamic_cast<const CallExpr *>(&expr))
+    return resolveCallExpr(*callRefExpr);
 
   llvm_unreachable("unexpected expression");
 }
