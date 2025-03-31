@@ -1,10 +1,9 @@
 fn main() : void {
   println(1);
+  add(2, 3);
 }
 
-fn add(a: number, b: number) : number {
-  return 3213; 
-}
+
 
 fn sub(c: number, d: number) : number {
   return 3213.23133;

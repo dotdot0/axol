@@ -8,6 +8,13 @@ module("<translation_unit>", context){
   module.setTargetTriple(llvm::sys::getDefaultTargetTriple());
 }
 
+llvm::AllocaInst * Codegen::allocateStackVariable(llvm::Function *function, const std::string_view ident){
+  llvm::IRBuilder<> tmpBuilder(context);
+  tmpBuilder.SetInsertPoint(allocaInsertPoint);
+
+  return tmpBuilder.CreateAlloca(tmpBuilder.getDoubleTy(), nullptr, ident);
+}
+
 llvm::Type *Codegen::generateType(Type type){
   if(type.kind == Type::Kind::Number)
     return builder.getDoubleTy();
@@ -15,9 +22,101 @@ llvm::Type *Codegen::generateType(Type type){
   return builder.getVoidTy();
 }
 
+llvm::Value *Codegen::generateCallExpr(const ResolvedCallExpr &expr){
+  llvm::Function *callee = module.getFunction(expr.callee->ident);
+
+  std::vector<llvm::Value *> args;
+  for(auto &&arg: expr.arguments)
+    args.emplace_back(generateExpr(*arg));
+  
+  return builder.CreateCall(callee, args);
+}
+
+llvm::Value *Codegen::generateExpr(const ResolvedExpr &expr){
+  if(auto *number = dynamic_cast<const ResolvedNumberLiteral *>(&expr))
+    return llvm::ConstantFP::get(builder.getDoubleTy(), number->value);
+  
+  if(auto *dre = dynamic_cast<const ResolvedDeclRefExpr *>(&expr))
+    return builder.CreateLoad(builder.getDoubleTy(), declarations[dre->decl]);
+    
+  if(auto *call = dynamic_cast<const ResolvedCallExpr *>(&expr))
+    return generateCallExpr(*call);
+}
+
+llvm::Value *Codegen::generateReturnStmt(const ResolvedReturnStmt &stmt){
+  if(stmt.expr)
+    builder.CreateStore(generateExpr(*stmt.expr), retVal);
+  
+  return builder.CreateBr(retBB);
+}
+
+llvm::Value *Codegen::generateStmt(const ResolvedStmt &stmt){
+  if(auto *expr = dynamic_cast<const ResolvedExpr *>(&stmt))
+    return generateExpr(*expr);
+  
+  if(auto *returnStmt = dynamic_cast<const ResolvedReturnStmt *>(&stmt))
+    return generateReturnStmt(*returnStmt);
+  
+  llvm_unreachable("unknown statement");
+}
+
+void Codegen::generateBlock(const ResolvedBlock &block){
+  for(auto &&stmt: block.statements){
+    generateStmt(*stmt);
+
+    if(dynamic_cast<const ResolvedReturnStmt *>(stmt.get())){
+      builder.ClearInsertionPoint();
+      break;
+    }
+  }
+}
+
+void Codegen::generateFunctionBody(const ResolvedFunctionDecl &functionDecl) {
+  auto *function = module.getFunction(functionDecl.ident);
+  auto *entryBB = llvm::BasicBlock::Create(context, "entry", function);
+  builder.SetInsertPoint(entryBB);
+  llvm::Value *undef = llvm::UndefValue::get(builder.getInt32Ty());
+  allocaInsertPoint = new llvm::BitCastInst(undef, undef->getType(), "alloca.placeholder", entryBB);
+  bool isVoid = functionDecl.type.kind == Type::Kind::Void;
+  if(!isVoid)
+    retVal = allocateStackVariable(function, "retVal");
+  retBB = llvm::BasicBlock::Create(context, "return");
+
+  if(retBB->hasNPredecessorsOrMore(1)){
+    builder.CreateBr(retBB);
+    retBB->insertInto(function);
+    builder.SetInsertPoint(retBB);
+  }
+  
+  int idx = 0;
+  for(auto &&arg: function->args()){
+    const auto *paramDecl = functionDecl.params[idx].get();
+    arg.setName(paramDecl->ident);
+    llvm::Value *var = allocateStackVariable(function, paramDecl->ident);
+    builder.CreateStore(&arg, var);
+    declarations[paramDecl] = var;
+
+    ++idx;
+  }
+  generateBlock(*functionDecl.body);
+  allocaInsertPoint->eraseFromParent();
+  allocaInsertPoint = nullptr;
+  if(isVoid){
+    builder.CreateRetVoid();
+    return;
+  }
+  builder.CreateRet(builder.CreateLoad(builder.getDoubleTy(), retVal));
+}
+
 void Codegen::generateFunctionDecl(const ResolvedFunctionDecl &functionDecl) {
   auto *retType = generateType(functionDecl.type);
-  for(auto &&param: functionDecl.params){}
+
+  std::vector<llvm::Type *> paramTypes;
+  for(auto &&param: functionDecl.params)
+    paramTypes.emplace_back(generateType(param->type));
+  
+  auto *type = llvm::FunctionType::get(retType, paramTypes, false); 
+  llvm::Function::Create(type, llvm::Function::ExternalLinkage, functionDecl.ident, module);
 }
 
 llvm::Module *Codegen::generateIR() {

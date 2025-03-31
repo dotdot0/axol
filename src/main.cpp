@@ -20,10 +20,10 @@ int main(int argc, char *argv[]){
 
   Parser parser(lex);
   auto functions = parser.parseSourceFile();
-  // for(auto &fn: functions.first){
-  //   fn->dump();
-  // }
-  // std::cout << "================" << "\n";
+  for(auto &fn: functions.first){
+    fn->dump();
+  }
+  std::cout << "================" << "\n";
 
   Sema sema(std::move(functions.first));
   auto functionsResolved = sema.resolveAST();
