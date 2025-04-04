@@ -1,6 +1,6 @@
 fn main() : void {
   println(1);
-  add(2, 3);
+  sub(1, 2);
 }
 
 

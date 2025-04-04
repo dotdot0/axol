@@ -8,6 +8,28 @@ module("<translation_unit>", context){
   module.setTargetTriple(llvm::sys::getDefaultTargetTriple());
 }
 
+void Codegen::generateMainWrapper(){
+  auto *builtinMain = module.getFunction("main");
+  builtinMain->setName("__builtin_main");
+
+  auto *main = llvm::Function::Create(llvm::FunctionType::get(builder.getInt32Ty(), {}, false),
+  llvm::Function::ExternalLinkage, "main", module);
+
+  auto *entry = llvm::BasicBlock::Create(context, "entry", main);
+  builder.SetInsertPoint(entry);
+
+  builder.CreateCall(builtinMain);
+  builder.CreateRet(llvm::ConstantInt::getSigned(builder.getInt32Ty(), 0));
+}
+
+void Codegen::generateBuiltinPrintBody(const ResolvedFunctionDecl &println){
+  auto *type = llvm::FunctionType::get(builder.getInt32Ty(), {llvm::PointerType::get(builder.getInt8Ty(), 0)}, true);
+  auto *printf = llvm::Function::Create(type, llvm::Function::ExternalLinkage, "printf", module);
+  auto *format = builder.CreateGlobalStringPtr("%.15g\n");
+  llvm::Value *param = builder.CreateLoad(builder.getDoubleTy(), declarations[println.params[0].get()]);
+  builder.CreateCall(printf, {format, param});
+}
+
 llvm::AllocaInst * Codegen::allocateStackVariable(llvm::Function *function, const std::string_view ident){
   llvm::IRBuilder<> tmpBuilder(context);
   tmpBuilder.SetInsertPoint(allocaInsertPoint);
@@ -41,6 +63,8 @@ llvm::Value *Codegen::generateExpr(const ResolvedExpr &expr){
     
   if(auto *call = dynamic_cast<const ResolvedCallExpr *>(&expr))
     return generateCallExpr(*call);
+  
+  llvm_unreachable("Invalid Expr");
 }
 
 llvm::Value *Codegen::generateReturnStmt(const ResolvedReturnStmt &stmt){
@@ -98,7 +122,11 @@ void Codegen::generateFunctionBody(const ResolvedFunctionDecl &functionDecl) {
 
     ++idx;
   }
-  generateBlock(*functionDecl.body);
+
+  if(functionDecl.ident == "println")
+    generateBuiltinPrintBody(functionDecl);
+  else
+    generateBlock(*functionDecl.body);
   allocaInsertPoint->eraseFromParent();
   allocaInsertPoint = nullptr;
   if(isVoid){
@@ -110,7 +138,7 @@ void Codegen::generateFunctionBody(const ResolvedFunctionDecl &functionDecl) {
 
 void Codegen::generateFunctionDecl(const ResolvedFunctionDecl &functionDecl) {
   auto *retType = generateType(functionDecl.type);
-
+  functionDecl.dump(0);
   std::vector<llvm::Type *> paramTypes;
   for(auto &&param: functionDecl.params)
     paramTypes.emplace_back(generateType(param->type));
@@ -121,12 +149,14 @@ void Codegen::generateFunctionDecl(const ResolvedFunctionDecl &functionDecl) {
 
 llvm::Module *Codegen::generateIR() {
   for(auto &&function: resolvedAST){
-    
+    generateFunctionDecl(*function);
   }
 
-  for(auto &&function: resolvedAST){
-
-  }
+  // for(auto &&function: resolvedAST){
+  //   generateFunctionBody(*function);
+  // }
   
+  generateMainWrapper();
+
   return &module;
 }

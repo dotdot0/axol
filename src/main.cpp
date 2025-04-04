@@ -1,7 +1,6 @@
 #include <iostream>
 #include <fstream>
-#include "../include/parser.h"
-#include "../include/sema.h"
+#include "../include/codegen.h"
 
 int main(int argc, char *argv[]){
 
@@ -27,8 +26,14 @@ int main(int argc, char *argv[]){
 
   Sema sema(std::move(functions.first));
   auto functionsResolved = sema.resolveAST();
-  for(auto &function: functionsResolved){
-    function->dump(0);
-  }
+  // for(auto &function: functionsResolved){
+  //   function->dump(0);
+  // }
+
+  // Codegen codegen(std::move(functionsResolved), argv[1]);
+
+  // llvm::Module *llvmIr = codegen.generateIR();
+
+  // llvmIr->print(llvm::errs(), nullptr);
   
 }

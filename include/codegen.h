@@ -33,6 +33,8 @@ class Codegen{
     llvm::Value *generateReturnStmt(const ResolvedReturnStmt &returnStmt);
     llvm::Value *generateExpr(const ResolvedExpr &expr);
     llvm::Value *generateCallExpr(const ResolvedCallExpr &expr);
+    void generateBuiltinPrintBody(const ResolvedFunctionDecl &println);
+    void generateMainWrapper();
 };
 
 #endif
