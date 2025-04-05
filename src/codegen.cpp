@@ -104,8 +104,10 @@ void Codegen::generateFunctionBody(const ResolvedFunctionDecl &functionDecl) {
   bool isVoid = functionDecl.type.kind != Type::Kind::Number;
   if(!isVoid)
     retVal = allocateStackVariable(function, "retVal");
-  retBB = llvm::BasicBlock::Create(context, "return", function);
   // retBB->insertInto(function);
+
+  if(!isVoid)
+    retBB = llvm::BasicBlock::Create(context, "return", function);
   
   int idx = 0;
   for(auto &&arg: function->args()){
@@ -125,12 +127,13 @@ void Codegen::generateFunctionBody(const ResolvedFunctionDecl &functionDecl) {
   allocaInsertPoint->eraseFromParent();
   allocaInsertPoint = nullptr;
 
-  builder.SetInsertPoint(retBB);
-  if(isVoid){
+  if (!isVoid && retBB && !retBB->use_empty()) {
+    builder.SetInsertPoint(retBB);
+    builder.CreateRet(builder.CreateLoad(builder.getDoubleTy(), retVal));
+  } else if (isVoid && builder.GetInsertBlock() && builder.GetInsertBlock()->getTerminator() == nullptr) {
     builder.CreateRetVoid();
-    return;
   }
-  builder.CreateRet(builder.CreateLoad(builder.getDoubleTy(), retVal));
+  // builder.CreateRet(builder.CreateLoad(builder.getDoubleTy(), retVal));
 }
 
 void Codegen::generateFunctionDecl(const ResolvedFunctionDecl &functionDecl) {

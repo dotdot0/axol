@@ -1,5 +1,5 @@
 fn main() : void {
-  println(1);
+  println(sub(21, 2133));
   sub(12, 21);
 }
 

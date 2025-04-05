@@ -32,6 +32,10 @@ int main(int argc, char *argv[]){
 
   llvm::Module *llvmIr = codegen.generateIR();
 
-  llvmIr->print(llvm::errs(), nullptr);
-  
+  // llvmIr->print(llvm::errs(), nullptr);
+
+  std::string path("tmp.ll");
+  std::error_code error_code;
+  llvm::raw_fd_ostream f(path, error_code);
+  llvmIr->print(f, nullptr);
 }
