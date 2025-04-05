@@ -1,5 +1,7 @@
 #include <iostream>
 #include <fstream>
+#include <filesystem>
+#include <string>
 #include "../include/codegen.h"
 
 int main(int argc, char *argv[]){
@@ -17,25 +19,24 @@ int main(int argc, char *argv[]){
 
   Parser parser(lex);
   auto functions = parser.parseSourceFile();
-  // for(auto &fn: functions.first){
-  //   fn->dump();
-  // }
-  // std::cout << "================" << "\n";
+  
 
   Sema sema(std::move(functions.first));
   auto functionsResolved = sema.resolveAST();
-  // for(auto &function: functionsResolved){
-  //   function->dump(0);
-  // }
-
   Codegen codegen(std::move(functionsResolved), argv[1]);
 
   llvm::Module *llvmIr = codegen.generateIR();
 
-  // llvmIr->print(llvm::errs(), nullptr);
+  llvmIr->print(llvm::errs(), nullptr);
 
-  std::string path("tmp.ll");
+  std::stringstream path;
+  path << "tmp-" << std::filesystem::hash_value(argv[1]) << ".ll";
   std::error_code error_code;
-  llvm::raw_fd_ostream f(path, error_code);
+  llvm::raw_fd_ostream f(path.str(), error_code);
   llvmIr->print(f, nullptr);
+  std::stringstream command;
+  command << "clang " << path.str();
+  int ret = std::system(command.str().c_str());
+  std::filesystem::remove(path.str());
+  return ret;
 }
