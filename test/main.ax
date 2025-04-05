@@ -1,18 +1,8 @@
 fn main() : void {
   println(1);
-  sub(1, 2);
+  sub(12, 21);
 }
 
-
-
-fn sub(c: number, d: number) : number {
-  return 3213.23133;
-}
-
-fn mul(x: number, y: number): number {
-  return 3123;
-}
-
-fn nn() : number {
-  return 560;
+fn sub(a: number, b: number) : number{
+  return 12234234;
 }

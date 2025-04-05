@@ -4,10 +4,8 @@
 
 int main(int argc, char *argv[]){
 
-  std::ifstream inp;
+  std::ifstream inp(argv[1]);
   
-  inp.open(argv[1]);
-
   if(!inp) std::cerr << "No input files";
 
   std::string buf;
@@ -19,10 +17,10 @@ int main(int argc, char *argv[]){
 
   Parser parser(lex);
   auto functions = parser.parseSourceFile();
-  for(auto &fn: functions.first){
-    fn->dump();
-  }
-  std::cout << "================" << "\n";
+  // for(auto &fn: functions.first){
+  //   fn->dump();
+  // }
+  // std::cout << "================" << "\n";
 
   Sema sema(std::move(functions.first));
   auto functionsResolved = sema.resolveAST();
@@ -30,10 +28,10 @@ int main(int argc, char *argv[]){
   //   function->dump(0);
   // }
 
-  // Codegen codegen(std::move(functionsResolved), argv[1]);
+  Codegen codegen(std::move(functionsResolved), argv[1]);
 
-  // llvm::Module *llvmIr = codegen.generateIR();
+  llvm::Module *llvmIr = codegen.generateIR();
 
-  // llvmIr->print(llvm::errs(), nullptr);
+  llvmIr->print(llvm::errs(), nullptr);
   
 }

@@ -101,16 +101,11 @@ void Codegen::generateFunctionBody(const ResolvedFunctionDecl &functionDecl) {
   builder.SetInsertPoint(entryBB);
   llvm::Value *undef = llvm::UndefValue::get(builder.getInt32Ty());
   allocaInsertPoint = new llvm::BitCastInst(undef, undef->getType(), "alloca.placeholder", entryBB);
-  bool isVoid = functionDecl.type.kind == Type::Kind::Void;
+  bool isVoid = functionDecl.type.kind != Type::Kind::Number;
   if(!isVoid)
     retVal = allocateStackVariable(function, "retVal");
-  retBB = llvm::BasicBlock::Create(context, "return");
-
-  if(retBB->hasNPredecessorsOrMore(1)){
-    builder.CreateBr(retBB);
-    retBB->insertInto(function);
-    builder.SetInsertPoint(retBB);
-  }
+  retBB = llvm::BasicBlock::Create(context, "return", function);
+  // retBB->insertInto(function);
   
   int idx = 0;
   for(auto &&arg: function->args()){
@@ -129,6 +124,8 @@ void Codegen::generateFunctionBody(const ResolvedFunctionDecl &functionDecl) {
     generateBlock(*functionDecl.body);
   allocaInsertPoint->eraseFromParent();
   allocaInsertPoint = nullptr;
+
+  builder.SetInsertPoint(retBB);
   if(isVoid){
     builder.CreateRetVoid();
     return;
@@ -138,7 +135,7 @@ void Codegen::generateFunctionBody(const ResolvedFunctionDecl &functionDecl) {
 
 void Codegen::generateFunctionDecl(const ResolvedFunctionDecl &functionDecl) {
   auto *retType = generateType(functionDecl.type);
-  functionDecl.dump(0);
+  // functionDecl.dump(0);
   std::vector<llvm::Type *> paramTypes;
   for(auto &&param: functionDecl.params)
     paramTypes.emplace_back(generateType(param->type));
@@ -148,13 +145,14 @@ void Codegen::generateFunctionDecl(const ResolvedFunctionDecl &functionDecl) {
 }
 
 llvm::Module *Codegen::generateIR() {
+
   for(auto &&function: resolvedAST){
     generateFunctionDecl(*function);
   }
 
-  // for(auto &&function: resolvedAST){
-  //   generateFunctionBody(*function);
-  // }
+  for(auto &&function: resolvedAST){
+    generateFunctionBody(*function);
+  }
   
   generateMainWrapper();
 
