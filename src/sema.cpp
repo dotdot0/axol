@@ -11,6 +11,18 @@
   auto var = (init); \
   if(!var) \
     return nullptr;
+  
+
+std::string_view getOpStrs(TokenKind op) {
+  if (op == TokenKind::Plus)
+    return "+";
+  if (op == TokenKind::Minus)
+    return "-";
+  if (op == TokenKind::Asterisk)
+    return "*";
+  if (op == TokenKind::Slash)
+    return "/";
+}
 
 std::string ident_s(std::size_t level) {
   return std::string(level * 2, ' ');
@@ -18,6 +30,21 @@ std::string ident_s(std::size_t level) {
 
 void ResolvedNumberLiteral::dump(size_t level) const {
   std::cerr << ident_s(level) << "ResolvedNumberLiteral: " << value << "\n";
+}
+
+void ResolvedBinaryOperator::dump(size_t level) const {
+  std::cerr << ident_s(level) << "ResolvedBinaryOperator: '" << getOpStrs(op)
+  << '\'' << '\n';
+
+  lhs->dump(level + 1);
+  rhs->dump(level + 1);
+}
+
+void ResolvedUnaryOperator::dump(size_t level) const {
+  std::cerr << ident_s(level) << "ResolvedUnaryOperator: '" << getOpStrs(op)
+  << '\'' << '\n';
+
+  operand->dump(level + 1);
 }
 
 void ResolvedDeclRefExpr::dump(size_t level) const {
@@ -173,8 +200,40 @@ std::unique_ptr<ResolvedExpr> Sema::resolveExpr(const Expr &expr) {
   
   if(const auto *callRefExpr = dynamic_cast<const CallExpr *>(&expr))
     return resolveCallExpr(*callRefExpr);
+  
+  if(const auto *op = dynamic_cast<const UnaryOperator *>(&expr))
+    return resolveUnaryOperator(*op);
+  
+  if(const auto *bin = dynamic_cast<const BinaryOperator *>(&expr))
+    return resolveBinaryOperator(*bin);
 
   llvm_unreachable("unexpected expression");
+}
+
+std::unique_ptr<ResolvedUnaryOperator> Sema::resolveUnaryOperator(const UnaryOperator &op){
+  varOrReturn(resolvedRHS, resolveExpr(*op.operand));
+
+  if(resolvedRHS->type.kind == Type::Kind::Void)
+    return report(resolvedRHS->line, resolvedRHS->col,
+    "void expression cannot be used as an operand to unary operator");
+  
+  return std::make_unique<ResolvedUnaryOperator>(op.line, op.col, op.op,std::move(resolvedRHS));
+}
+
+std::unique_ptr<ResolvedBinaryOperator>
+Sema::resolveBinaryOperator(const BinaryOperator &binop) {
+  varOrReturn(resolvedLHS, resolveExpr(*binop.lhs));
+  varOrReturn(resolvedRHS, resolveExpr(*binop.rhs));
+
+  if (resolvedLHS->type.kind == Type::Kind::Void)
+    return report(resolvedLHS->line, resolvedRHS->col,
+    "void expression cannot be used as LHS operand to binary operator");
+
+  if (resolvedRHS->type.kind == Type::Kind::Void)
+    return report(resolvedRHS->line, resolvedRHS->col,
+    "void expression cannot be used as RHS operand to binary operator");
+
+  return std::make_unique<ResolvedBinaryOperator>(binop.line, binop.col, binop.op,std::move(resolvedLHS), std::move(resolvedRHS));
 }
 
 std::unique_ptr<ResolvedReturnStmt> Sema::resolveReturnStmt(const ReturnStmt &returnStmt) {

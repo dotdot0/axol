@@ -56,6 +56,33 @@ struct CallExpr: public Expr{
   void dump(std::size_t level = 0) const override;
 };
 
+struct BinaryOperator: public Expr{
+  std::unique_ptr<Expr> lhs;
+  std::unique_ptr<Expr> rhs;
+  TokenKind op;
+
+  BinaryOperator(int line, int col, 
+  std::unique_ptr<Expr> lhs,
+  std::unique_ptr<Expr> rhs,
+  TokenKind op)
+  : Expr(line, col),
+    lhs(std::move(lhs)),
+    rhs(std::move(rhs)),
+    op(op){}
+  
+  void dump(std::size_t level = 0) const override;
+};
+
+struct UnaryOperator: public Expr{
+  std::unique_ptr<Expr> operand;
+  TokenKind op;
+
+  UnaryOperator(int line, int col, std::unique_ptr<Expr> operand, TokenKind op):
+  Expr(line, col), operand(std::move(operand)), op(op){}
+
+  void dump(std::size_t level = 0) const override; 
+};
+
 struct DeclRefExpr: public Expr{
   std::string identifier;
 
@@ -149,6 +176,10 @@ class Parser{
   std::unique_ptr<std::vector<std::unique_ptr<Expr>>> parseArgumentList();
   std::unique_ptr<ParamDecl> parseParamDecl();
   std::unique_ptr<std::vector<std::unique_ptr<ParamDecl>>> parseParamList();
+  std::unique_ptr<Expr> parseExprRHS(std::unique_ptr<Expr> lhs, int precedence);
+  std::unique_ptr<Expr> parsePrefixExpr();
 };
+
+
 
 #endif

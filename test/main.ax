@@ -1,8 +1,7 @@
 fn main() : void {
-  println(sub(21, 2133));
-  sub(12, 21);
+  println(sub(12, 2));
 }
 
-fn sub(a: number, b: number) : number{
-  return 12234234;
+fn sub(a: number, b: number): number{
+  return a - b;
 }

@@ -6,13 +6,14 @@
 #include <optional>
 #include <iostream>
 
-constexpr char charTokens[] = {'\0', '(', ')', '{', '}', ':', ';', ','};
+constexpr char charTokens[] = {'\0', '(', ')', '{', '}', ':', ';', ',', '+', '-', '*'};
 
 
 enum class TokenKind: char{
   Ident  = 1,
   Func,
   Void,
+  Slash,
   Return,
   Eof    = charTokens[0],
   Lpar   = charTokens[1],
@@ -24,6 +25,9 @@ enum class TokenKind: char{
   Comma = charTokens[7],
   Unk    = -128,
   Number,
+  Plus = charTokens[8],
+  Minus = charTokens[9],
+  Asterisk = charTokens[10]
 };
 
 // still not sure out of func, fn, and def which one should be used for function so all of them are here :)

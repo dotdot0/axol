@@ -11,6 +11,30 @@
   if(!var) \
     return nullptr;
 
+std::string_view getOpStr(TokenKind op) {
+  if (op == TokenKind::Plus)
+    return "+";
+  if (op == TokenKind::Minus)
+    return "-";
+  if (op == TokenKind::Asterisk)
+    return "*";
+  if (op == TokenKind::Slash)
+    return "/";
+}
+
+int getTokPrecedence(TokenKind tok) {
+  switch (tok) {
+  case TokenKind::Asterisk:
+  case TokenKind::Slash:
+    return 6;
+  case TokenKind::Plus:
+  case TokenKind::Minus:
+    return 5;
+  default:
+    return -1;
+  }
+}
+
 std::string ident_(std::size_t level) {
   return std::string(level * 2, ' ');
 }
@@ -31,11 +55,24 @@ void ReturnStmt::dump(std::size_t level) const {
     expr->dump(level+1);
 }
 
+void UnaryOperator::dump(size_t level) const {
+  std::cerr << ident_(level) << "UnaryOperator: '" << getOpStr(op) << '\''
+  << '\n';
+
+  operand->dump(level + 1);
+}
+
 void Block::dump(std::size_t level) const {
   std::cerr << ident_(level) << "Block:\n";
   for(auto &&stmt: statements)
       stmt->dump(level+1); 
 
+}
+
+void BinaryOperator::dump(std::size_t level) const {
+  std::cerr << ident_(level) << "BinaryOperator: " << getOpStr(op) << "\'" << "\n";
+  lhs->dump(level+1);
+  rhs->dump(level+1);
 }
 
 void NumberLiteral::dump(std::size_t level) const {
@@ -195,8 +232,43 @@ std::optional<Type> Parser::parseType(){
   return std::nullopt;
 }
 
+std::unique_ptr<Expr> Parser::parsePrefixExpr() {
+  Token tok = nextToken;
+
+  if (tok.kind != TokenKind::Minus)
+    return parsePostfixExpr();
+  eatNextToken();
+
+  varOrReturn(rhs, parsePrefixExpr());
+
+  return std::make_unique<UnaryOperator>(tok.line, tok.col, std::move(rhs),
+  tok.kind);
+}
+
+std::unique_ptr<Expr> Parser::parseExprRHS(std::unique_ptr<Expr> lhs, int precedence){
+  while(true){
+    Token op = nextToken;
+    int curOpPrec = getTokPrecedence(op.kind);
+    
+    if(curOpPrec < precedence)
+      return lhs;
+    
+    eatNextToken();
+
+    varOrReturn(rhs, parsePrefixExpr());
+
+    if(curOpPrec < getTokPrecedence(nextToken.kind)){
+      rhs = parseExprRHS(std::move(rhs), curOpPrec + 1);
+      if(!rhs)
+        return nullptr;
+    }
+    lhs = std::make_unique<BinaryOperator>(op.line, op.col, std::move(lhs), std::move(rhs), op.kind);
+  }
+}
+
 std::unique_ptr<Expr> Parser::parseExpr(){
-  return Parser::parsePostfixExpr();
+  varOrReturn(lhs, parsePrefixExpr());
+  return parseExprRHS(std::move(lhs), 0);
 }
 
 std::unique_ptr<ReturnStmt> Parser::parseReturnStmt(){

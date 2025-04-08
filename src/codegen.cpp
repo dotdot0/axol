@@ -64,7 +64,42 @@ llvm::Value *Codegen::generateExpr(const ResolvedExpr &expr){
   if(auto *call = dynamic_cast<const ResolvedCallExpr *>(&expr))
     return generateCallExpr(*call);
   
+  if(auto *bin = dynamic_cast<const ResolvedBinaryOperator *>(&expr))
+    return generateBinaryOperator(*bin);
+  
+  if(auto *op = dynamic_cast<const ResolvedUnaryOperator *>(&expr))
+    return generateUnaryOperator(*op);
+  
   llvm_unreachable("Invalid Expr");
+}
+
+llvm::Value *Codegen::generateUnaryOperator(const ResolvedUnaryOperator &op){
+  llvm::Value *rhs = generateExpr(*op.operand);
+
+  if(op.op == TokenKind::Minus)
+    return builder.CreateFNeg(rhs);
+  
+  llvm_unreachable("unknown unary op");
+  return nullptr;
+}
+
+llvm::Value *Codegen::generateBinaryOperator(const ResolvedBinaryOperator &bin){
+  TokenKind op = bin.op;
+  
+  llvm::Value *lhs = generateExpr(*bin.lhs);
+  llvm::Value *rhs = generateExpr(*bin.rhs);
+
+  if(op == TokenKind::Plus)
+    return builder.CreateFAdd(lhs, rhs);
+  if(op == TokenKind::Minus)
+    return builder.CreateFSub(lhs, rhs);
+  if(op == TokenKind::Asterisk)
+    return builder.CreateFMul(lhs, rhs);
+  if(op == TokenKind::Slash)
+    return builder.CreateFDiv(lhs, rhs);
+  
+  llvm_unreachable("unexpected binary op");
+  return nullptr;
 }
 
 llvm::Value *Codegen::generateReturnStmt(const ResolvedReturnStmt &stmt){

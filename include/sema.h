@@ -32,6 +32,37 @@ struct ResolvedExpr: public ResolvedStmt{
     type(type){}
 };
 
+struct ResolvedBinaryOperator: public ResolvedExpr{
+  TokenKind op;
+  std::unique_ptr<ResolvedExpr> lhs;
+  std::unique_ptr<ResolvedExpr> rhs;
+
+  ResolvedBinaryOperator(int line, int col, 
+  TokenKind op,
+  std::unique_ptr<ResolvedExpr> lhs,
+  std::unique_ptr<ResolvedExpr> rhs)
+  : ResolvedExpr(line, col, lhs->type),
+    op(op),
+    lhs(std::move(lhs)),
+    rhs(std::move(rhs)){}
+  
+  void dump(std::size_t level = 0) const override;
+
+};
+
+struct ResolvedUnaryOperator: public ResolvedExpr{
+  TokenKind op;
+  std::unique_ptr<ResolvedExpr> operand;
+
+  ResolvedUnaryOperator(int line, int col, TokenKind op,
+  std::unique_ptr<ResolvedExpr> operand):
+  ResolvedExpr(line, col, operand->type),
+  op(op),
+  operand(std::move(operand)){}
+
+  void dump(std::size_t level = 0) const override;
+};
+
 struct ResolvedDecl {
   int line;
   int col;
@@ -162,6 +193,8 @@ class Sema {
     std::unique_ptr<ResolvedExpr> resolveExpr(const Expr &expr);
     std::unique_ptr<ResolvedDeclRefExpr> resolveDeclRefExpr(const DeclRefExpr &declRefExpr, bool isCallee = false);
     std::unique_ptr<ResolvedCallExpr> resolveCallExpr(const CallExpr &call);
+    std::unique_ptr<ResolvedUnaryOperator> resolveUnaryOperator(const UnaryOperator &op);
+    std::unique_ptr<ResolvedBinaryOperator> resolveBinaryOperator(const BinaryOperator &bin);
 };
 
 #endif

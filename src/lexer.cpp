@@ -35,6 +35,11 @@ Token Lexer::getNextToken(){
     return Token{line, col, TokenKind::Number, std::move(value)};
   }
 
+  if(curr == '/'){
+    if(peekNextChar() != '/')
+      return Token{line, col, TokenKind::Slash};
+  }
+
   for(auto &c: charTokens) 
     if(c == curr) return Token{ line, col, static_cast<TokenKind>(c) };
   
