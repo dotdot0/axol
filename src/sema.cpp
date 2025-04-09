@@ -145,7 +145,7 @@ std::optional<Type> Sema::resolveType(Type parsedType) {
 std::unique_ptr<ResolvedCallExpr> Sema::resolveCallExpr(const CallExpr &call) {
   const auto *dre = dynamic_cast<const DeclRefExpr *>(call.callee.get());
 
-  std::cout << dre->identifier << "\n";
+  // std::cout << dre->identifier << "\n";
 
   if(!dre)
     return report(call.line, call.col, "expression cannot be called as a function.");
@@ -154,7 +154,7 @@ std::unique_ptr<ResolvedCallExpr> Sema::resolveCallExpr(const CallExpr &call) {
 
   const auto *resolvedFunctionDecl = dynamic_cast<const ResolvedFunctionDecl *>(resolvedCallee->decl);
 
-  std::cout << resolvedFunctionDecl->ident << "\n";
+  // std::cout << resolvedFunctionDecl->ident << "\n";
 
   if(!resolvedFunctionDecl)
     return report(call.line, call.col, "calling non-function type");
@@ -299,11 +299,11 @@ std::unique_ptr<ResolvedBlock> Sema::resolveBlock(const Block &block) {
 }
 
 std::unique_ptr<ResolvedFunctionDecl> Sema::resolveFunctionDeclaration(const FunctionDecl &function) {
-  for(auto it: scopes){
-    for(auto i: it){
-      std::cout << i->ident << "\n";
-    }
-  }
+  // for(auto it: scopes){
+  //   for(auto i: it){
+  //     std::cout << i->ident << "\n";
+  //   }
+  // }
   std::optional<Type> type = resolveType(function.type);
   // std::cout << type.value().name << "\n";
 
