@@ -62,6 +62,12 @@ void UnaryOperator::dump(size_t level) const {
   operand->dump(level + 1);
 }
 
+void GroupingExpr::dump(std::size_t level) const {
+  std::cerr << ident_(level) << "GroupingExpr: \n";
+
+  expr->dump(level+1);
+}
+
 void Block::dump(std::size_t level) const {
   std::cerr << ident_(level) << "Block:\n";
   for(auto &&stmt: statements)
@@ -144,6 +150,17 @@ std::unique_ptr<Expr> Parser::parsePrimary(){
     auto literal = std::make_unique<NumberLiteral>(line, col, nextToken.value.value());
     eatNextToken();
     return literal;
+  }
+
+  if(nextToken.kind == TokenKind::Lpar){
+    eatNextToken();
+
+    varOrReturn(expr, parseExpr());
+    
+    matchOrReturn(TokenKind::Rpar, "expected ')'");
+    eatNextToken();
+
+    return std::make_unique<GroupingExpr>(line, col, std::move(expr));
   }
 
   if(nextToken.kind == TokenKind::Ident){

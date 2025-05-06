@@ -32,6 +32,17 @@ struct ResolvedExpr: public ResolvedStmt{
     type(type){}
 };
 
+struct ResolvedGroupingExpr: public ResolvedExpr{
+  std::unique_ptr<ResolvedExpr> expr;
+
+  ResolvedGroupingExpr(int line, int col
+  ,std::unique_ptr<ResolvedExpr> expr):
+  ResolvedExpr(line,col, expr->type),
+  expr(std::move(expr)){}
+
+  void dump(std::size_t level = 0) const override;
+};
+
 struct ResolvedBinaryOperator: public ResolvedExpr{
   TokenKind op;
   std::unique_ptr<ResolvedExpr> lhs;

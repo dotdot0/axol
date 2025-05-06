@@ -22,6 +22,7 @@ std::string_view getOpStrs(TokenKind op) {
     return "*";
   if (op == TokenKind::Slash)
     return "/";
+  return "";
 }
 
 std::string ident_s(std::size_t level) {

@@ -56,6 +56,17 @@ struct CallExpr: public Expr{
   void dump(std::size_t level = 0) const override;
 };
 
+struct GroupingExpr: public Expr {
+  std::unique_ptr<Expr> expr;
+
+  GroupingExpr(int line, int col,
+  std::unique_ptr<Expr> expr):
+  Expr(line, col),
+  expr(std::move(expr)){}
+
+  void dump(std::size_t level = 0) const override;
+};
+
 struct BinaryOperator: public Expr{
   std::unique_ptr<Expr> lhs;
   std::unique_ptr<Expr> rhs;

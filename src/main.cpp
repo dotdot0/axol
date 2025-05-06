@@ -51,6 +51,6 @@ int main(int argc, char *argv[]){
   std::stringstream command;
   command << "clang " << path.str();
   int ret = std::system(command.str().c_str());
-  // std::filesystem::remove(path.str());
+  std::filesystem::remove(path.str());
   return ret;
 }
