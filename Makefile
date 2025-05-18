@@ -15,3 +15,4 @@ run:
 
 clean:
 	rm -rf axol
+	rm -rf a.out
