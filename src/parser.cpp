@@ -30,6 +30,17 @@ int getTokPrecedence(TokenKind tok) {
   case TokenKind::Plus:
   case TokenKind::Minus:
     return 5;
+  case TokenKind::Geq:
+  case TokenKind::Leq:
+  case TokenKind::Gt:
+  case TokenKind::Lt:
+    return 4;
+  case TokenKind::EqEq:
+    return 3;
+  case TokenKind::AmpAmp:
+    return 2;
+  case TokenKind::PipePipe:
+    return 1;
   default:
     return -1;
   }
@@ -252,7 +263,7 @@ std::optional<Type> Parser::parseType(){
 std::unique_ptr<Expr> Parser::parsePrefixExpr() {
   Token tok = nextToken;
 
-  if (tok.kind != TokenKind::Minus)
+  if (tok.kind != TokenKind::Excl && tok.kind != TokenKind::Minus)
     return parsePostfixExpr();
   eatNextToken();
 

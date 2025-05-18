@@ -1,5 +1,14 @@
 #include "../include/codegen.h"
 
+llvm::Value *Codegen::doubleToBool(llvm::Value *v) {
+  return builder.CreateFCmpONE(v,
+  llvm::ConstantFP::get(builder.getDoubleTy(), 0.0), "to.bool");
+}
+
+llvm::Value *Codegen::boolToDouble(llvm::Value *v) {
+  return builder.CreateUIToFP(v, builder.getDoubleTy(), "to.double");
+}
+
 Codegen::Codegen(std::vector<std::unique_ptr<ResolvedFunctionDecl>> resolvedAST, std::string_view sourcePath):
 resolvedAST(std::move(resolvedAST)),
 builder(context),
@@ -70,6 +79,9 @@ llvm::Value *Codegen::generateExpr(const ResolvedExpr &expr){
   if(auto *op = dynamic_cast<const ResolvedUnaryOperator *>(&expr))
     return generateUnaryOperator(*op);
   
+  if(auto *g = dynamic_cast<const ResolvedGroupingExpr *>(&expr))
+    return generateExpr(*g->expr);
+  
   llvm_unreachable("Invalid Expr");
 }
 
@@ -79,8 +91,44 @@ llvm::Value *Codegen::generateUnaryOperator(const ResolvedUnaryOperator &op){
   if(op.op == TokenKind::Minus)
     return builder.CreateFNeg(rhs);
   
+  if(op.op == TokenKind::Excl)
+    return boolToDouble(builder.CreateNot(doubleToBool(rhs)));
+  
   llvm_unreachable("unknown unary op");
   return nullptr;
+}
+
+llvm::Function *Codegen::getCurrentFunction(){
+  return builder.GetInsertBlock()->getParent();
+}
+
+void Codegen::generateConditionalOperator(const ResolvedExpr &op,
+llvm::BasicBlock *trueBB, llvm::BasicBlock *falseBB){
+  llvm::Function *currentFunction = getCurrentFunction();
+
+  const auto *binop = dynamic_cast<const ResolvedBinaryOperator *>(&op);
+
+  if(binop && binop->op == TokenKind::PipePipe){
+    llvm::BasicBlock *nextBB = 
+      llvm::BasicBlock::Create(context, "or.lhs.false", currentFunction);
+
+      generateConditionalOperator(*binop->lhs, trueBB, nextBB);
+      builder.SetInsertPoint(nextBB);
+      generateConditionalOperator(*binop->rhs, trueBB, falseBB);
+
+    return;
+  }
+
+  if(binop && binop->op == TokenKind::AmpAmp){
+    llvm::BasicBlock *nextBB = 
+      llvm::BasicBlock::Create(context, "or.lhs.true", currentFunction);
+
+      generateConditionalOperator(*binop->lhs, nextBB, falseBB);
+      builder.SetInsertPoint(nextBB);
+      generateConditionalOperator(*binop->rhs, trueBB, falseBB);
+
+    return;
+  }
 }
 
 llvm::Value *Codegen::generateBinaryOperator(const ResolvedBinaryOperator &bin){
@@ -97,6 +145,16 @@ llvm::Value *Codegen::generateBinaryOperator(const ResolvedBinaryOperator &bin){
     return builder.CreateFMul(lhs, rhs);
   if(op == TokenKind::Slash)
     return builder.CreateFDiv(lhs, rhs);
+  if(op == TokenKind::Lt)
+    return boolToDouble(builder.CreateFCmpOLT(lhs, rhs));
+  if(op == TokenKind::Gt)
+    return boolToDouble(builder.CreateFCmpOGT(lhs, rhs));
+  if(op == TokenKind::EqEq)
+    return boolToDouble(builder.CreateFCmpOEQ(lhs, rhs));
+  if(op == TokenKind::Leq)
+    return boolToDouble(builder.CreateFCmpOLE(lhs, rhs));
+  if(op == TokenKind::Geq)
+    return boolToDouble(builder.CreateFCmpOGE(lhs, rhs));
   
   llvm_unreachable("unexpected binary op");
   return nullptr;

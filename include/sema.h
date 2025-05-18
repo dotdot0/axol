@@ -206,6 +206,7 @@ class Sema {
     std::unique_ptr<ResolvedCallExpr> resolveCallExpr(const CallExpr &call);
     std::unique_ptr<ResolvedUnaryOperator> resolveUnaryOperator(const UnaryOperator &op);
     std::unique_ptr<ResolvedBinaryOperator> resolveBinaryOperator(const BinaryOperator &bin);
+    std::unique_ptr<ResolvedGroupingExpr> resolveGroupingExpr(const GroupingExpr &g);
 };
 
 #endif

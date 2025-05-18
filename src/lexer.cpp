@@ -1,4 +1,5 @@
 #include "../include/lexer.h"
+#include "../include/parser.h"
 
 Token Lexer::getNextToken(){
   char curr = consume();
@@ -38,6 +39,31 @@ Token Lexer::getNextToken(){
   if(curr == '/'){
     if(peekNextChar() != '/')
       return Token{line, col, TokenKind::Slash};
+  }
+
+  if(curr == '=' && peekNextChar() == '='){
+    consume();
+    return Token{line, col, TokenKind::EqEq};
+  }
+
+  if(curr == '&' && peekNextChar() == '&'){
+    consume();
+    return Token{line, col, TokenKind::AmpAmp};
+  }
+  
+  if(curr == '|' && peekNextChar() == '|'){
+    consume();
+    return Token{line, col, TokenKind::PipePipe};
+  }
+
+  if(curr == '<' && peekNextChar() == '='){
+    consume();
+    return Token{line, col, TokenKind::Leq};
+  }
+
+  if(curr == '>' && peekNextChar() == '='){
+    consume();
+    return Token{line, col, TokenKind::Geq};
   }
 
   for(auto &c: charTokens) 

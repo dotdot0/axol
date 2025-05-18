@@ -33,6 +33,12 @@ void ResolvedNumberLiteral::dump(size_t level) const {
   std::cerr << ident_s(level) << "ResolvedNumberLiteral: " << value << "\n";
 }
 
+void ResolvedGroupingExpr::dump(size_t level) const  {
+  std::cerr << ident_s(level) << "ResolvedGroupingExpr: \n";
+
+  expr->dump(level + 1);
+}
+
 void ResolvedBinaryOperator::dump(size_t level) const {
   std::cerr << ident_s(level) << "ResolvedBinaryOperator: '" << getOpStrs(op)
   << '\'' << '\n';
@@ -207,8 +213,16 @@ std::unique_ptr<ResolvedExpr> Sema::resolveExpr(const Expr &expr) {
   
   if(const auto *bin = dynamic_cast<const BinaryOperator *>(&expr))
     return resolveBinaryOperator(*bin);
+  
+  if(const auto *g = dynamic_cast<const GroupingExpr *>(&expr))
+    return resolveGroupingExpr(*g);
 
   llvm_unreachable("unexpected expression");
+}
+
+std::unique_ptr<ResolvedGroupingExpr> Sema::resolveGroupingExpr(const GroupingExpr &g){
+  varOrReturn(resolvedExpr, resolveExpr(*g.expr));
+  return std::make_unique<ResolvedGroupingExpr>(g.line, g.col, std::move(resolvedExpr));
 }
 
 std::unique_ptr<ResolvedUnaryOperator> Sema::resolveUnaryOperator(const UnaryOperator &op){
@@ -327,7 +341,7 @@ std::unique_ptr<ResolvedFunctionDecl> Sema::resolveFunctionDeclaration(const Fun
   for(auto &&param: function.params){
     auto resolvedParam = resolveParamDecl(*param);
 
-    if(!resolvedParam || !insertDeclToCurrentScope(*resolvedParam))
+    if(!resolvedParam)
       return nullptr;
     
     resolvedParams.emplace_back(std::move(resolvedParam));

@@ -36,6 +36,10 @@ class Codegen{
     llvm::Value *generateUnaryOperator(const ResolvedUnaryOperator &op);
     llvm::Value *generateBinaryOperator(const ResolvedBinaryOperator &bin);
     void generateBuiltinPrintBody(const ResolvedFunctionDecl &println);
+    llvm::Value *doubleToBool(llvm::Value *v);
+    llvm::Value *boolToDouble(llvm::Value *v);
+    void generateConditionalOperator(const ResolvedExpr &op, llvm::BasicBlock *trueBB, llvm::BasicBlock *falseBB);
+    llvm::Function *getCurrentFunction();
     void generateMainWrapper();
 };
 
