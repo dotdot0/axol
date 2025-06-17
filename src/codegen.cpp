@@ -1,4 +1,5 @@
 #include "../include/codegen.h"
+#include <llvm/IR/Constants.h>
 
 llvm::Value *Codegen::doubleToBool(llvm::Value *v) {
   return builder.CreateFCmpONE(v,
@@ -39,7 +40,7 @@ void Codegen::generateBuiltinPrintBody(const ResolvedFunctionDecl &println){
   builder.CreateCall(printf, {format, param});
 }
 
-llvm::AllocaInst * Codegen::allocateStackVariable(llvm::Function *function, const std::string_view ident){
+llvm::AllocaInst * Codegen::allocateStackVariable(llvm::Function *function, const std::string_view ident, llvm::Type *type){
   llvm::IRBuilder<> tmpBuilder(context);
   tmpBuilder.SetInsertPoint(allocaInsertPoint);
 
@@ -49,6 +50,9 @@ llvm::AllocaInst * Codegen::allocateStackVariable(llvm::Function *function, cons
 llvm::Type *Codegen::generateType(Type type){
   if(type.kind == Type::Kind::Number)
     return builder.getDoubleTy();
+  
+  if(type.kind == Type::Kind::Int)
+    return builder.getInt32Ty();
   
   return builder.getVoidTy();
 }
@@ -66,9 +70,12 @@ llvm::Value *Codegen::generateCallExpr(const ResolvedCallExpr &expr){
 llvm::Value *Codegen::generateExpr(const ResolvedExpr &expr){
   if(auto *number = dynamic_cast<const ResolvedNumberLiteral *>(&expr))
     return llvm::ConstantFP::get(builder.getDoubleTy(), number->value);
+
+  if(auto *inte = dynamic_cast<const ResolvedIntLiteral *>(&expr))
+    return llvm::ConstantInt::get(builder.getInt32Ty(), inte->value);
   
   if(auto *dre = dynamic_cast<const ResolvedDeclRefExpr *>(&expr))
-    return builder.CreateLoad(builder.getDoubleTy(), declarations[dre->decl]);
+    return builder.CreateLoad(generateType(dre->type), declarations[dre->decl]);
     
   if(auto *call = dynamic_cast<const ResolvedCallExpr *>(&expr))
     return generateCallExpr(*call);
@@ -194,9 +201,9 @@ void Codegen::generateFunctionBody(const ResolvedFunctionDecl &functionDecl) {
   builder.SetInsertPoint(entryBB);
   llvm::Value *undef = llvm::UndefValue::get(builder.getInt32Ty());
   allocaInsertPoint = new llvm::BitCastInst(undef, undef->getType(), "alloca.placeholder", entryBB);
-  bool isVoid = functionDecl.type.kind != Type::Kind::Number;
+  bool isVoid = functionDecl.type.kind == Type::Kind::Void;
   if(!isVoid)
-    retVal = allocateStackVariable(function, "retVal");
+    retVal = allocateStackVariable(function, "retVal", generateType(functionDecl.type));
   // retBB->insertInto(function);
 
   if(!isVoid)
@@ -206,7 +213,7 @@ void Codegen::generateFunctionBody(const ResolvedFunctionDecl &functionDecl) {
   for(auto &&arg: function->args()){
     const auto *paramDecl = functionDecl.params[idx].get();
     arg.setName(paramDecl->ident);
-    llvm::Value *var = allocateStackVariable(function, paramDecl->ident);
+    llvm::Value *var = allocateStackVariable(function, paramDecl->ident, generateType(paramDecl->type));
     builder.CreateStore(&arg, var);
     declarations[paramDecl] = var;
 
@@ -222,7 +229,7 @@ void Codegen::generateFunctionBody(const ResolvedFunctionDecl &functionDecl) {
 
   if (!isVoid && retBB && !retBB->use_empty()) {
     builder.SetInsertPoint(retBB);
-    builder.CreateRet(builder.CreateLoad(builder.getDoubleTy(), retVal));
+    builder.CreateRet(builder.CreateLoad(generateType(functionDecl.type), retVal));
   } else if (isVoid && builder.GetInsertBlock() && builder.GetInsertBlock()->getTerminator() == nullptr) {
     builder.CreateRetVoid();
   }

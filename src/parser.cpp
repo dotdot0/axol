@@ -1,4 +1,7 @@
 #include "../include/parser.h"
+#include <cstdarg>
+#include <cstddef>
+#include <memory>
 
 
 #define matchOrReturn(tok, msg) \
@@ -98,6 +101,10 @@ void NumberLiteral::dump(std::size_t level) const {
   std::cerr << ident_(level) << "NumberLiteral: " << value << "\n";
 }
 
+void IntLiteral::dump(std::size_t level) const {
+  std::cerr << ident_(level) << "IntLiteral: " << value << "\n";
+}
+
 void DeclRefExpr::dump(std::size_t level) const {
   std::cerr << ident_(level) << "DeclRefExpr: " << identifier << "\n";
 }
@@ -158,6 +165,12 @@ void Parser::synchronize(){
 std::unique_ptr<Expr> Parser::parsePrimary(){
   int line = nextToken.line;
   int col  = nextToken.col;
+
+  if(nextToken.kind == TokenKind::Int){
+    auto literal = std::make_unique<IntLiteral>(line, col, nextToken.value.value());
+    eatNextToken();
+    return literal;
+  }
 
   if(nextToken.kind == TokenKind::Number){
     auto literal = std::make_unique<NumberLiteral>(line, col, nextToken.value.value());
@@ -245,6 +258,11 @@ std::optional<Type> Parser::parseType(){
   if(kind == TokenKind::Number){
     eatNextToken();
     return Type::builtinNumber();
+  }
+
+  if(kind == TokenKind::Int){
+    eatNextToken();
+    return Type::builtinInt();
   }
 
   if(kind == TokenKind::Void){

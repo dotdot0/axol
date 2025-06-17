@@ -23,9 +23,9 @@ int main(int argc, char *argv[]){
 
   Parser parser(lex);
   auto functions = parser.parseSourceFile();
-  // for(auto &&function: functions.first){
-  //   function->dump();
-  // }
+  for(auto &&function: functions.first){
+    function->dump();
+  }
 
   std::cout << "=============" << "\n";
 
@@ -33,15 +33,15 @@ int main(int argc, char *argv[]){
 
   Sema sema(std::move(functions.first));
   auto functionsResolved = sema.resolveAST();
-  // for(auto &&function: functionsResolved){
-  //   function->dump();
-  // }
+  for(auto &&function: functionsResolved){
+    function->dump();
+  }
 
   Codegen codegen(std::move(functionsResolved), argv[1]);
 
   llvm::Module *llvmIr = codegen.generateIR();
 
-  // llvmIr->print(llvm::errs(), nullptr);
+  llvmIr->print(llvm::errs(), nullptr);
 
   std::stringstream path;
   path << "tmp-" << std::filesystem::hash_value(argv[1]) << ".ll";

@@ -30,6 +30,9 @@ enum class TokenKind: char{
   Comma = charTokens[7],
   Unk    = -128,
   Number,
+  Int,
+  KwIf,
+  KwElse,
   Plus = charTokens[8],
   Minus = charTokens[9],
   Asterisk = charTokens[10],
@@ -45,6 +48,8 @@ const std::unordered_map<std::string, TokenKind> keywords = {
   {"def",  TokenKind::Func},
   {"fn", TokenKind::Func},
   {"return", TokenKind::Return},
+  {"if", TokenKind::KwIf},
+  {"else", TokenKind::KwElse}
 };
 
 struct SourceFile{

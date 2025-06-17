@@ -1,5 +1,8 @@
 #include "../include/sema.h"
 #include "../include/parser.h"
+#include <cstddef>
+#include <memory>
+#include <string>
 
 
 #define matchOrReturn(tok, msg) \
@@ -31,6 +34,10 @@ std::string ident_s(std::size_t level) {
 
 void ResolvedNumberLiteral::dump(size_t level) const {
   std::cerr << ident_s(level) << "ResolvedNumberLiteral: " << value << "\n";
+}
+
+void ResolvedIntLiteral::dump(size_t level) const {
+  std::cerr << ident_s(level) << "ResolvedIntLiteral: " << value << "\n";
 }
 
 void ResolvedGroupingExpr::dump(size_t level) const  {
@@ -141,9 +148,12 @@ std::unique_ptr<ResolvedFunctionDecl> Sema::createBuiltinPrintln() {
 
 std::optional<Type> Sema::resolveType(Type parsedType) {
   // std::cout << parsedType.name << "\n";
-  if (parsedType.kind == Type::Kind::Number || parsedType.name == "number") {
+  if (parsedType.kind == Type::Kind::Number || parsedType.name == "number")
     return Type::builtinNumber(); // Built-in type 'number'
-  }
+                                  
+  if(parsedType.kind == Type::Kind::Int || parsedType.name == "int") 
+    return Type::builtinInt();
+  
   if(parsedType.kind == Type::Kind::Custom)
    return std::nullopt;
   return parsedType;
@@ -201,6 +211,9 @@ std::unique_ptr<ResolvedDeclRefExpr> Sema::resolveDeclRefExpr(const DeclRefExpr 
 std::unique_ptr<ResolvedExpr> Sema::resolveExpr(const Expr &expr) {
   if(const auto *number = dynamic_cast<const NumberLiteral *>(&expr))
     return std::make_unique<ResolvedNumberLiteral>(number->line, number->col, std::stod(number->value));
+  
+  if(const auto *inte = dynamic_cast<const IntLiteral *>(&expr))
+    return std::make_unique<ResolvedIntLiteral>(inte->line, inte->col, std::stoi(inte->value));
   
   if (const auto *declRefExpr = dynamic_cast<const DeclRefExpr *>(&expr))
     return resolveDeclRefExpr(*declRefExpr);
@@ -377,7 +390,7 @@ std::vector<std::unique_ptr<ResolvedFunctionDecl>> Sema::resolveAST() {
   for(size_t i = 1; i < resolvedTree.size(); ++i){
     currentFunction = resolvedTree[i].get();
 
-    ScopeRAII(this);
+    ScopeRAII s(this);
     for(auto &&param : currentFunction->params){
       insertDeclToCurrentScope(*param);
     }

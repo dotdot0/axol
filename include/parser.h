@@ -1,6 +1,7 @@
 #ifndef PARSER_H
 #define PARSER_H
 
+#include <cstdarg>
 #include<iostream>
 #include<string>
 #include<memory>
@@ -39,6 +40,8 @@ struct Stmt{
 
   virtual void dump(std::size_t level = 0) const = 0;
 };
+
+
 
 struct Expr : public Stmt{
   Expr(int line, int col): Stmt(line, col){}
@@ -114,6 +117,16 @@ struct NumberLiteral : public Expr{
   void dump(std::size_t level = 0) const override;
 };
 
+struct IntLiteral : public Expr{
+  std::string value;
+
+  IntLiteral(int line, int col, std::string value):
+  Expr(line, col),
+  value(std::move(value)){}
+
+  void dump(std::size_t level = 0) const override;
+};
+
 struct Block{
   int line;
   int col;
@@ -126,6 +139,12 @@ struct Block{
   }
 
   void dump (std::size_t level) const;
+};
+
+struct IfStmt: public Stmt{
+  std::unique_ptr<Expr> condition;
+  std::unique_ptr<Block> trueBlock;
+  std::unique_ptr<Block> falseBlock;
 };
 
 struct ReturnStmt : public Stmt{

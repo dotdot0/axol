@@ -1,3 +1,4 @@
+#include <cstddef>
 #ifndef SEMA_H
 
 #include <iostream>
@@ -97,6 +98,16 @@ struct ResolvedNumberLiteral: public ResolvedExpr{
   : ResolvedExpr(line, col, Type::builtinNumber()),
     value(value){}
   
+  void dump(size_t level = 0) const override;
+};
+
+struct ResolvedIntLiteral: public ResolvedExpr{
+  int value;
+
+  ResolvedIntLiteral(int line, int col, int value)
+  : ResolvedExpr(line, col, Type::builtinInt()),
+    value(value){}
+
   void dump(size_t level = 0) const override;
 };
 

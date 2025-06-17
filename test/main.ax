@@ -1,22 +1,8 @@
 fn main() : void {
-  println(sub(12, 2));
-  println(add(10, 2));
-  println(mul(0, 2));
-  println(fds(1, 43));
+  println(sub(1, 2));
 }
 
 fn sub(a: number, b: number): number{
-  return a - b * a + a;
+  return a - b;
 }
 
-fn add(c: number, d: number): number{
-  return c + d;
-}
-
-fn mul(e: number, f: number): number{
-  return !e;
-}
-
-fn fds(g: number, h: number): number{
-  return (g <= h);
-}

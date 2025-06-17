@@ -27,7 +27,7 @@ class Codegen{
     llvm::Type *generateType(Type type);
     void generateFunctionDecl(const ResolvedFunctionDecl &functionDecl);
     void generateFunctionBody(const ResolvedFunctionDecl &functionDecl);
-    llvm::AllocaInst * allocateStackVariable(llvm::Function *function, const std::string_view ident);
+    llvm::AllocaInst * allocateStackVariable(llvm::Function *function, const std::string_view ident, llvm::Type *type);
     void generateBlock(const ResolvedBlock &block);
     llvm::Value *generateStmt(const ResolvedStmt &stmt);
     llvm::Value *generateReturnStmt(const ResolvedReturnStmt &returnStmt);
