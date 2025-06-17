@@ -4,13 +4,14 @@
 #include <string>
 
 struct Type{
-  enum class Kind{ Void, Number, Custom };
+  enum class Kind{ Void, Number, Custom, Int };
 
   Kind kind;
   std::string name;
 
   static Type builtinVoid() { return {Kind::Void, "void"}; }
   static Type builtinNumber() { return {Kind::Number, "number"}; }
+  static Type builtinInt() { return {Kind::Int, "int"}; }
   static Type custom(const std::string &name) { return {Kind::Custom, name}; }
 
   private:
